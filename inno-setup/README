@@ -1,0 +1,1 @@
+Copy all the files in the bin directory under the parent directory to the package-source of this directory. Be careful not to delete the bin directory under the original package-source.
