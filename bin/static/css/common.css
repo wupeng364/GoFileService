@@ -1,0 +1,37 @@
+html,body{
+	font-family: 'PingFangSC-Light','Hiragino Sans GB',Microsoft YaHei Light,Microsoft YaHei,Arial,sans-serif;
+	font-size:12px;
+	color: #333;	
+	margin: 0px;
+	padding:0px;
+	height:100%;
+	width:100%;
+	overflow:hidden;
+	font: 12px -apple-system,BlinkSystemFont,"Segoe UI",Roboto,Ubuntu,"Helvetica Neue",Helevetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei UI","Microsoft YaHei","Source Han Sans CN",sans-serif;
+    -webkit-font-smoothing:subpixel-antialiased;
+    outline: 0;
+}
+li{
+	list-style:none;
+}
+
+
+/*****/
+#app{
+	width:100%;
+	height:100%;
+	overflow:hidden;
+	padding:0px;
+	margin:0px;	
+}
+.layout{
+	background:#FFF;
+	overflow:hidden;
+	height:100%;
+	width:100%;
+	margin:0px;
+	padding:0px;
+}
+.Sider{
+	height:100%;
+}

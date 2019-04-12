@@ -1,0 +1,25 @@
+GoModel(模块加载器)
+	1. 用于控制模块的装载和初始化
+	2. 用于反射调用模块函数
+	
+interface
+	info( )			// 返回模块信息
+	setup( )		// 模块安装, 一个模块只初始化一次
+	update( )		// 模块升级, 一个版本执行一次
+	
+	onInit( )			// 每次启动加载模块执行一次
+	onDestroy( )		// 系统执行销毁时执行
+	
+struct
+	
+	// 模块的描述
+	type ModelInfo struct{
+		name    string
+		version float32
+		description string
+	}
+
+method
+	Invoke(mId string, method string,  )
+	
+2019年1月13日 --- 暂时就这些
