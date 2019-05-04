@@ -1,11 +1,12 @@
 
 if(typeof __import_core__=="undefined"){   
 	__import_core__=true;  
-	var version = "2019.4.06"; 
+	var version = "2019.4.26"; 
 	// JS
 	document.write("<script type='text/javascript' src='/lib/axios.min.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/promise.auto.min.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/utils/prop-extends.js?v="+version+"'></script>");
+	document.write("<script type='text/javascript' src='/lib/common/tools.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/utils/futil.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/utils/fhttp.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/vue/vue.min.js?v="+version+"'></script>");

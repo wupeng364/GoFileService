@@ -151,7 +151,7 @@
           load: 0,
           index: 0,
           showDrawer: false,
-          url: "/fsapi/upload/"+$futil.guid( ),
+          url: "/fsapi/upload/"+$tools.guid( ),
           files: [],
         },
         loading: false,
@@ -183,7 +183,7 @@
               title: '修改时间',
               key: 'CtTime',
               render:function (h, params){
-                return h("span", $futil.long2Time(params.row.CtTime));
+                return h("span", $tools.long2Time(params.row.CtTime));
               }
           },
           {
@@ -191,7 +191,7 @@
               key: 'FileSize',
               render:function (h, params){
                 if( params.row.IsFile ){
-                  return h("span", $futil.formatSize(params.row.FileSize));
+                  return h("span", $tools.formatSize(params.row.FileSize));
                 }else{
                   h("span", "");
                 }
@@ -399,7 +399,7 @@
         // 上传-触发选择文件
         doSelectFiels: function( ev ){
           var self = this;
-          $futil.addEvent(this.$refs.upload_selector_file, "change", function( ev_data ){
+          $tools.addEvent(this.$refs.upload_selector_file, "change", function( ev_data ){
             if( ev_data.target.files ){
               for(var i = 0; i < ev_data.target.files.length; i++){
                 var fs = ev_data.target.files[i];
@@ -415,7 +415,7 @@
             }
             self.$refs.upload_selector_file.value = ""
           }, {once: true});
-          $futil.triggerMouseEvent(this.$refs.upload_selector_file, "click");
+          $tools.triggerMouseEvent(this.$refs.upload_selector_file, "click");
         },
         // 上传-触发上传动作
         doStartUpload: function( ){
@@ -432,7 +432,7 @@
             }
             // file._upload.index = this.fsUpload.index-1;
             var self = this;
-            file._upload.updater = $futil.uploadByFormData(this.fsUpload.url, file, {
+            file._upload.updater = $tools.uploadByFormData(this.fsUpload.url, file, {
               form: {
                 "Save-Path": file._upload.base+"/"+file.name,
               },

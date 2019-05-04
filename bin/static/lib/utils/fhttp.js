@@ -11,8 +11,8 @@
 	}
 }(this, function ( ){
 
+	axios.defaults.timeout = 60000; 
 	axios.defaults.withCredentials = true;
-	axios.defaults.timeout = 30000; 
 	axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=UTF-8';
 	var _http = {
 		session:function( ){
@@ -21,7 +21,7 @@
 		buildHeader:function(ak, method, uri, datas ){
 			return {};
 		},
-		fetchSync:function(method, uri, datas){
+		fetchSync: function(method, uri, datas){
 			if(datas!=undefined){ 
 				for(var key in datas){
 					if(datas[key]==undefined){
@@ -30,7 +30,7 @@
 				}
 			}
 			var headers = {};		
-			var session = _http.session();
+			var session = _http.session( );
 			var ak = (session==null || session.accesskey==null || (typeof session.accesskey == 'undefined')) ? null : session.accesskey;
 			if(ak!=null){
 				headers = _http.buildHeader(ak, method.toUpperCase(), uri, datas);

@@ -561,7 +561,7 @@ Vue.component("fs-selector", {
                     key: 'CtTime',
                     width:180,
                     render:function (h, params){
-                    	return h("span", $futil.long2Time(params.row.CtTime));
+                    	return h("span", $tools.long2Time(params.row.CtTime));
                     }
                 }
 			],
@@ -762,7 +762,7 @@ Vue.component("fs-fileicon",{
 			if(!this.node.IsFile){
 				return "/img/file_icons/folder.png";				
 			}
-			return $futil.iconUrl(path);			
+			return $tools.iconUrl(path);			
 		},
 		initvalue:function(){
 			this.filename = this.node.Path.getName( );
