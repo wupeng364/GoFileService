@@ -42,13 +42,13 @@
 		// 获取一个打开的Url - 流
 		GetSteamUrl: function( path ){
 			return _fsApi.GetTransferToken( path ).then(function( data ){
-				return "/fsapi/openfile/"+data
+				return "/fsapi/openfile/"+data+path.getSuffixed( );
 			});
 		},
 		// 获取一个上载的Url
 		GetUploadUrl: function( path ){
 			return _fsApi.GetTransferToken( path ).then(function( data ){
-				return "/fsapi/upload/"+data
+				return "/fsapi/upload/"+data;
 			}).catch(function( ){
 				return "";
 			});

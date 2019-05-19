@@ -9,6 +9,7 @@ import(
 	"errors"
 	"fmt"
 	hst "common/httpservertools"
+	"strings"
 	"common/stringtools"
 	"modules/filemanage"
 	"modules/httpservermodel"
@@ -559,6 +560,10 @@ func (fa imp_http) Upload( w http.ResponseWriter, r *http.Request ){
 // 打开
 func (fa imp_http) OpenFile( w http.ResponseWriter, r *http.Request ){
 	token := stringtools.GetPathName( r.URL.Path )
+	_index := strings.Index(token, ".")
+	if _index > -1 {
+		token = token[:_index]
+	}
 	err, tokenObject := getFileTransferTokenObject(fa, token)
 	if nil != err || nil == tokenObject {
 		sendError(w, Error_OprationExpires); return

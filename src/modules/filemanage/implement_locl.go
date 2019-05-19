@@ -118,9 +118,6 @@ func (il imp_local) DoMove(src string, dst string, replace, ignore bool, callbac
 				return callback(count, _r_src, _r_dst, nil)
 			})
 		}
-		case mt_type_smb:{ // Smb协议
-			return errors.New("This type of partition mount type is not implemented: Smb")
-		}
 		case mt_type_oss:{ // oss对象存储
 			return errors.New("This type of partition mount type is not implemented: Oss")
 		}
@@ -235,9 +232,6 @@ func (il imp_local) DoCopy(src, dst string, replace, ignore bool, callback CopyC
 				})
 				
 			}
-		}
-		case mt_type_smb:{ // Smb协议
-			return errors.New("This type of partition mount type is not implemented: Smb")
 		}
 		case mt_type_oss:{ // oss对象存储
 			return errors.New("This type of partition mount type is not implemented: Oss")

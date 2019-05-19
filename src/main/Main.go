@@ -15,7 +15,7 @@ import (
 
 func main(){
 	// 加载模块&监听端口
-	go func( ){
+	{
 		// 加载模块
 	    GModel.LoadModel( &configmodel.ConfigModel{} )
 	    GModel.LoadModel( &httpservermodel.HttpServerModel{} )
@@ -26,14 +26,5 @@ func main(){
 	    
 	    // 启动监听
 		fmt.Println( GModel.Invoke("HttpServerModel", "DoStartServer")[0].Interface( ).(error) )
-	}( )
-	
-	var sc string
-	for{
-		if sc == "exit" {
-			break
-		}
-		fmt.Scan(&sc)
-		fmt.Println("Input 'exit' to exit this program.")
 	}
 }

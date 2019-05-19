@@ -21,7 +21,6 @@ const(
 	cfg_data_addr  string = "addr"
 
 	mt_type_local string  = "LOCAL"
-	mt_type_smb   string  = "SMB"
 	mt_type_oss	  string  = "OSS"
 	
 	sys_dir = ".sys"
@@ -116,10 +115,6 @@ func (mtm *MountManager) getInterface( relativePath string) fmInterface {
 			return &imp_local{ recentMtItems, mtm }
 			break
 		}
-		case mt_type_smb:{ // Smb协议
-			panic(errors.New("This type of partition mount type is not implemented: Smb"))
-			break
-		}
 		case mt_type_oss:{ // oss对象存储
 			panic(errors.New("This type of partition mount type is not implemented: Oss"))
 			break
@@ -179,7 +174,6 @@ func parseMtItems( mi MtItems ) MtItems{
 	// 需要统一挂载类型大消息
 	mi.MtType = strings.ToUpper(mi.MtType)
 	if	mi.MtType != mt_type_local &&
-		mi.MtType != mt_type_smb && 
 		mi.MtType != mt_type_oss {
 			panic(errors.New("Unsupported partition mount type: "+mi.MtType))
 	}

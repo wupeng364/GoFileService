@@ -1,7 +1,7 @@
 
 if(typeof __import_core__=="undefined"){   
 	__import_core__=true;  
-	var version = "2019.4.26"; 
+	var version = "2019.5.19"; 
 	// JS
 	document.write("<script type='text/javascript' src='/lib/axios.min.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/promise.auto.min.js?v="+version+"'></script>");
