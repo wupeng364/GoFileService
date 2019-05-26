@@ -3,8 +3,8 @@
 	 * @description 附加在 $tools 上的属性
 	 * @author	wupeng364@outlook.com
 	*/
-	if( $tools && $tools.extendAttrs ){
-		$tools.extendAttrs($tools, factory( ));
+	if( root.$tools && root.$tools.extendAttrs ){
+		root.$tools.extendAttrs(root.$tools, factory( ));
 	}else{
 		root.$tools = factory( );
 	}

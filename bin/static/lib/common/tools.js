@@ -70,6 +70,13 @@
 			}
 			return _Commons.isType(o, "string");;
 		},
+		// 是否具有某个属性
+		hasKey: function(obj, key){
+			if( !obj ){
+				return false;
+			}
+			return Object.prototype.hasOwnProperty.call(obj, key);
+		}
 	};
 
 	/**
@@ -399,5 +406,24 @@
 		},
 	});
 
+	/**
+	 * HTTP参数处理 类型函数
+	*/ 
+	_Commons.extendAttrs(_Commons, {
+		json2query: function(obj, prefix) {
+			prefix = prefix || '';
+			var pairs = [];
+			var has = Object.prototype.hasOwnProperty;
+			if ('string' !== typeof prefix){
+				prefix = '?';
+			}
+			for (var key in obj) {
+				if (has.call(obj, key)) {
+					pairs.push(key +'='+ encodeURIComponent(obj[key]));
+				}
+			}
+			return pairs.length ? prefix + pairs.join('&') : '';
+		}
+	});
 	return _Commons;
 }));

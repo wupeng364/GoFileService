@@ -33,8 +33,8 @@ Name: "{group}\{cm:UninstallProgram,File Service}"; Filename: "{uninstallexe}"
 
 [Run]
 ;·À»ðÇ½
-Filename: "{sys}\netsh.exe"; Parameters: "firewall delete allowedprogram ""{app}\main.exe"" ";
-Filename: "{sys}\netsh.exe"; Parameters: "firewall add allowedprogram ""{app}\main.exe"" ""KassCloud Client Core Service"" ENABLE ALL";
+Filename: "{sys}\netsh.exe"; Parameters: "firewall delete allowedprogram ""{app}\gofs.exe"" ";
+Filename: "{sys}\netsh.exe"; Parameters: "firewall add allowedprogram ""{app}\gofs.exe"" ""KassCloud Client Core Service"" ENABLE ALL";
 
 
 [UninstallRun]
@@ -107,7 +107,7 @@ end;
 function closeRuningProgram():boolean;
 var errorCode:Integer;
 begin
-  Exec(ExpandConstant('{cmd}'),'/C taskkill /f /im fsmain.exe', '', SW_HIDE,ewWaitUntilTerminated, errorCode);
+  Exec(ExpandConstant('{cmd}'),'/C taskkill /f /im gofs', '', SW_HIDE,ewWaitUntilTerminated, errorCode);
   Result:=True;
 end;
 
@@ -115,7 +115,7 @@ end;
 function installService():boolean;
 var errorCode:Integer;
 begin
-  Exec(ExpandConstant('{app}')+'\bin\nssm.exe','install GoFileService '+ExpandConstant('{app}')+'\main.exe', '', SW_SHOWNORMAL,ewWaitUntilTerminated, errorCode);
+  Exec(ExpandConstant('{app}')+'\bin\nssm.exe','install GoFileService '+ExpandConstant('{app}')+'\gofs.exe', '', SW_SHOWNORMAL,ewWaitUntilTerminated, errorCode);
   Exec(ExpandConstant('{app}')+'\bin\nssm.exe','set GoFileService AppDirectory '+ExpandConstant('{app}'), '', SW_SHOWNORMAL,ewWaitUntilTerminated, errorCode);
   Exec(ExpandConstant('{app}')+'\bin\nssm.exe','set GoFileService ObjectName \"Local Service\"', '', SW_SHOWNORMAL,ewWaitUntilTerminated, errorCode);
  
