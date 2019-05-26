@@ -107,7 +107,7 @@ end;
 function closeRuningProgram():boolean;
 var errorCode:Integer;
 begin
-  Exec(ExpandConstant('{cmd}'),'/C taskkill /f /im gofs', '', SW_HIDE,ewWaitUntilTerminated, errorCode);
+  Exec(ExpandConstant('{cmd}'),'/C taskkill /f /im gofs.exe', '', SW_HIDE,ewWaitUntilTerminated, errorCode);
   Result:=True;
 end;
 
