@@ -14,12 +14,12 @@ import (
 
 
 // 模块加载
-func LoadModel( mt ModuleTemplate ){
+func LoadModule( mt ModuleTemplate ){
 	
 	// load mothod
 	mInfo := mt.MInfo()
 	
-	doRecordModel(mInfo, mt)
+	doRecordModule(mInfo, mt)
 	fmt.Printf("> Loading %s(%s)[%p] Start \r\n", mInfo.Name, mInfo.Description, mt)
 	
 	fmt.Printf("  > Do Check Setup \r\n")
@@ -31,20 +31,20 @@ func LoadModel( mt ModuleTemplate ){
 	fmt.Printf("  > Do Init function \r\n")
 	doInit( mInfo, mt.OnMInit )
 	fmt.Println("> Loading Complate")
-	// fmt.Println("modelMethods: ", modelMethods )
+	// fmt.Println("moduleMethods: ", moduleMethods )
 }
 
 // 获取某个模块
-func GetModel( mId string )(val interface{}, ok bool){
-	if v, ok := models[mId]; ok {
+func GetModule( mId string )(val interface{}, ok bool){
+	if v, ok := modules[mId]; ok {
 		return v, true
 	}
 	return nil, false
 }
 
 // 获取模块指针记录, 可以获取一个已经实例化的模块
-func GetPointer( mt interface{} ) interface{}{
-	if val, ok := GetModel( mt.(ModuleTemplate).MInfo( ).Name ); ok {
+func GetModuleReference( mt ModuleTemplate ) interface{}{
+	if val, ok := GetModule( mt.(ModuleTemplate).MInfo( ).Name ); ok {
 		return val
 	}
 	return nil
@@ -52,8 +52,8 @@ func GetPointer( mt interface{} ) interface{}{
 
 // 模块调用, 返回值暂时无法处理
 func Invoke(mId string, method string, params ...interface{} )Returns{
-	if model, ok := models[mId]; ok {
-		val := reflect.ValueOf(model)
+	if module, ok := modules[mId]; ok {
+		val := reflect.ValueOf(module)
 		fun := val.MethodByName(method)
 		fmt.Printf( "   > Invoke: "+mId+"."+method+", %v, %+v \r\n", fun, &fun )
 		args := make([]reflect.Value, len(params))
@@ -96,12 +96,12 @@ func ValsIsErr( res Returns, index int, doErr func(err error) ) bool{
 
 // ==================================private==================================<
 // 记录模块地址
-func doRecordModel( mi *ModelInfo, mt ModuleTemplate ){
-	models[mi.Name] = mt
-	// fmt.Println(models)
+func doRecordModule( mi *ModuleInfo, mt ModuleTemplate ){
+	modules[mi.Name] = mt
+	// fmt.Println(modules)
 }
 // 模块安装
-func doSetup( mi *ModelInfo, mst func( ) ){
+func doSetup( mi *ModuleInfo, mst func( ) ){
 	setupVerKey := "modules."+mi.Name+".SetupVer"
 	if len(configs.GetConfig(setupVerKey)) == 0 {
 		mst( )
@@ -110,7 +110,7 @@ func doSetup( mi *ModelInfo, mst func( ) ){
 	}
 }
 // 模块升级
-func doUpdate( mi *ModelInfo, mst func( ) ){
+func doUpdate( mi *ModuleInfo, mst func( ) ){
 	setupVerKey := "modules."+mi.Name+".SetupVer"
 	setupVerStr := strconv.FormatFloat(mi.Version, 'f', moduleVersionPrec, 64)
 	_historyVer := configs.GetConfig(setupVerKey)
@@ -120,6 +120,6 @@ func doUpdate( mi *ModelInfo, mst func( ) ){
 	}
 }
 // 模块初始化
-func doInit( mi *ModelInfo, mst func( func( mt interface{} )interface{} ) ){
-	mst( GetPointer )
+func doInit( mi *ModuleInfo, mst func( ReferenceModule ) ){
+	mst( GetModuleReference )
 }

@@ -192,3 +192,6 @@ func GetHostname( )string {
 func Getpid( )string {
   return Int2String(int64(os.Getpid( )))
 }
+func GetTimestamp( ) int64{
+	return time.Now().UnixNano( ) / 1e6
+}

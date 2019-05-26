@@ -6,42 +6,42 @@ package filemanage
 import (
 	"common/gomodule"
 	"common/tokenmanager"
-	"modules/configmodel"
+	"modules/config"
 	"io"
 	"fmt"
 )
-type FileManageModel struct{
-	cfgModel *configmodel.ConfigModel
+type FileManageModule struct{
+	cfgModule *config.ConfigModule
 	mt 		 *MountManager
 	tk		 *tokenmanager.TokenManager
 }
 
 // 返回模块信息
-func (fm *FileManageModel)MInfo( )(*gomodule.ModelInfo)	{
-	return &gomodule.ModelInfo{
+func (fm *FileManageModule)MInfo( )(*gomodule.ModuleInfo)	{
+	return &gomodule.ModuleInfo{
 		fm,
-		"FileManageModel",
+		"FileManageModule",
 		1.0,
 		"文件管理模块",
 	}
 }
 // 模块安装, 一个模块只初始化一次
-func (fm *FileManageModel)MSetup( ) {
+func (fm *FileManageModule)MSetup( ) {
 	
 }
 // 模块升级, 一个版本执行一次
-func (fm *FileManageModel)MUpdate( ) {
+func (fm *FileManageModule)MUpdate( ) {
 	
 }
 
 // 每次启动加载模块执行一次
-func (fm *FileManageModel)OnMInit( getPointer func(m interface{})interface{}  ) {
-	fm.cfgModel = getPointer(fm.cfgModel).(*configmodel.ConfigModel)
-	fm.mt = (&MountManager{}).initMountItems( fm.cfgModel.GetConfigs(cfg_data_mount).(map[string]interface{}) )
+func (fm *FileManageModule)OnMInit( ref gomodule.ReferenceModule) {
+	fm.cfgModule = ref(fm.cfgModule).(*config.ConfigModule)
+	fm.mt = (&MountManager{}).initMountItems( fm.cfgModule.GetConfigs(cfg_data_mount).(map[string]interface{}) )
 	fm.tk = (&tokenmanager.TokenManager{}).Init( )
 }
 // 系统执行销毁时执行
-func (fm *FileManageModel)OnMDestroy( ) {
+func (fm *FileManageModule)OnMDestroy( ) {
 	
 }
 
@@ -49,7 +49,7 @@ func (fm *FileManageModel)OnMDestroy( ) {
 // 申请一个Token用于跟踪和控制操作
 // 复制, 移动 等出现重复或者异常后, 需要返回 跳过/重试 控制权限
 // 后端的操作逻辑根据对象中的值进行跳过/重试操作, 如果客户端超过60s没有响应则放弃操作
-func (fm *FileManageModel) AskToken(operationType string, tokenBody interface{})string{
+func (fm *FileManageModule) AskToken(operationType string, tokenBody interface{})string{
 	return fm.tk.AskToken(&tokenmanager.TokenObject{
 			TypeStr: operationType,
 			Second: tokenExpired_Second,
@@ -57,78 +57,78 @@ func (fm *FileManageModel) AskToken(operationType string, tokenBody interface{})
 	})
 }
 // 查询Token的内容
-func (fm *FileManageModel) GetToken(token string) *tokenmanager.TokenObject{
+func (fm *FileManageModule) GetToken(token string) *tokenmanager.TokenObject{
 	tokenobject, ok := fm.tk.GetTokenInfo(token)
 	if ok {
 		return tokenobject
 	}
 	return nil
 }
-func (fm *FileManageModel) RefreshToken(token string){
+func (fm *FileManageModule) RefreshToken(token string){
 	fm.tk.RefreshToken(token)
 }
-func (fm *FileManageModel) RemoveToken(token string){
+func (fm *FileManageModule) RemoveToken(token string){
 	fm.tk.DestroyToken(token)
 }
 // newName
-func (fm *FileManageModel) DoRename(relativePath, newName string) error{
+func (fm *FileManageModule) DoRename(relativePath, newName string) error{
 	fs := fm.mt.getInterface(relativePath)
 	return fs.DoRename(relativePath, newName)
 }
 // DoNewFolder
-func (fm *FileManageModel) DoNewFolder(relativePath string) error{
+func (fm *FileManageModule) DoNewFolder(relativePath string) error{
 	fs := fm.mt.getInterface(relativePath)
 	return fs.DoNewFolder(relativePath)
 }
 // 删除文件|文件夹
-func (fm *FileManageModel) DoDelete(relativePath string) error{
+func (fm *FileManageModule) DoDelete(relativePath string) error{
 	fs := fm.mt.getInterface(relativePath)
 	return fs.DoDelete(relativePath)
 }
 // 移动文件|文件夹
-func (fm *FileManageModel) DoMove(src, dest string, replace, ignore bool, callback MoveCallback)error{
+func (fm *FileManageModule) DoMove(src, dest string, replace, ignore bool, callback MoveCallback)error{
 	fs := fm.mt.getInterface(src)
 	return fs.DoMove(src, dest, replace, ignore, callback)
 }
 // 复制文件|夹
-func (fm *FileManageModel) DoCopy(src, dest string, replace, ignore bool, callback CopyCallback)error{
+func (fm *FileManageModule) DoCopy(src, dest string, replace, ignore bool, callback CopyCallback)error{
 	fs := fm.mt.getInterface(src)
 	return fs.DoCopy(src, dest, replace, ignore, callback)
 }
 // 写入文件
-func (fm *FileManageModel)DoWrite(relativePath string, ioReader io.Reader)error{
+func (fm *FileManageModule)DoWrite(relativePath string, ioReader io.Reader)error{
 	fs := fm.mt.getInterface(relativePath)
 	return fs.DoWrite(relativePath, ioReader)
 }
 // 读取文件
-func (fm *FileManageModel)DoRead(relativePath string)(io.Reader, error){
+func (fm *FileManageModule)DoRead(relativePath string)(io.Reader, error){
 	fs := fm.mt.getInterface(relativePath)
 	return fs.DoRead(relativePath)
 }
 // 是否是文件, 如果路径不对或者驱动不对则为 false
-func (fm *FileManageModel) IsFile( relativePath string ) bool {
+func (fm *FileManageModule) IsFile( relativePath string ) bool {
 	fs := fm.mt.getInterface(relativePath)
 	ok,_ := fs.IsFile(relativePath)
 	return ok
 }
 // 是否存在, 如果路径不对或者驱动不对则为 false
-func (fm *FileManageModel) IsExist( relativePath string ) bool {
+func (fm *FileManageModule) IsExist( relativePath string ) bool {
 	fs := fm.mt.getInterface(relativePath)
 	ok,_ := fs.IsExist(relativePath)
 	return ok
 }
 // 获取文件大小
-func (fm *FileManageModel) GetFileSize(relativePath string) (int64, error){
+func (fm *FileManageModule) GetFileSize(relativePath string) (int64, error){
 	fs := fm.mt.getInterface(relativePath)
 	return fs.GetFileSize(relativePath)
 }
 // 获取文件夹列表
-func (fm *FileManageModel) GetDirList(relativePath string) ([]string, error){
+func (fm *FileManageModule) GetDirList(relativePath string) ([]string, error){
 	fs := fm.mt.getInterface(relativePath)
 	return fs.GetDirList( relativePath )
 }
 // 获取文件夹下文件的基本信息
-func (fm *FileManageModel) GetDirListInfo(relativePath string) ([]F_BaseInfo, error){
+func (fm *FileManageModule) GetDirListInfo(relativePath string) ([]F_BaseInfo, error){
 	fs := fm.mt.getInterface(relativePath)
 	ls, err := fs.GetDirList( relativePath )
 	_len_ls := len(ls)

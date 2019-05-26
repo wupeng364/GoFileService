@@ -1,4 +1,4 @@
-package fileapimodel
+package fileapi
 
 import(
 	"errors"

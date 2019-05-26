@@ -5,26 +5,26 @@ package main
 */
 import (
 	"fmt"
-	GModel "common/gomodule"
-	"modules/configmodel"
-	"modules/httpservermodel"
+	GModule "common/gomodule"
+	"modules/config"
+	"modules/httpserver"
 	"modules/filemanage"
-	"modules/fileapimodel"
-	"modules/htmlmodel"
+	"modules/fileapi"
+	"modules/htmlpage"
 )
 
 func main(){
 	// 加载模块&监听端口
 	{
 		// 加载模块
-	    GModel.LoadModel( &configmodel.ConfigModel{} )
-	    GModel.LoadModel( &httpservermodel.HttpServerModel{} )
-	    GModel.LoadModel( &filemanage.FileManageModel{} )
-	    GModel.LoadModel( &htmlmodel.Htmlmodel{} )
-	    GModel.LoadModel( &fileapimodel.FsApimodel{} )
+	    GModule.LoadModule( &config.ConfigModule{} )
+	    GModule.LoadModule( &httpserver.HttpServerModule{} )
+	    GModule.LoadModule( &filemanage.FileManageModule{} )
+	    GModule.LoadModule( &htmlpage.HtmlModule{} )
+	    GModule.LoadModule( &fileapi.FsApiModule{} )
 	    fmt.Println("\r\n\r\n")
 	    
 	    // 启动监听
-		fmt.Println( GModel.Invoke("HttpServerModel", "DoStartServer")[0].Interface( ).(error) )
+		fmt.Println( GModule.Invoke("HttpServerModule", "DoStartServer")[0].Interface( ).(error) )
 	}
 }

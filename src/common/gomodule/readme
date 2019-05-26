@@ -1,4 +1,4 @@
-GoModel(模块加载器)
+GoModule(模块加载器)
 	1. 用于控制模块的装载和初始化
 	2. 用于反射调用模块函数
 	
@@ -13,7 +13,7 @@ interface
 struct
 	
 	// 模块的描述
-	type ModelInfo struct{
+	type ModuleInfo struct{
 		name    string
 		version float32
 		description string

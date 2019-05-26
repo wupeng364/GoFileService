@@ -1,4 +1,4 @@
-package configmodel
+package config
 
 /**
  * 系统配置接口

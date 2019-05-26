@@ -1,4 +1,4 @@
-package htmlmodel
+package htmlpage
 /**
  *@description 静态资源路由
  *@author	wupeng364@outlook.com

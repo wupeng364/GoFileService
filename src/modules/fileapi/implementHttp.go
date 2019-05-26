@@ -1,4 +1,4 @@
-package fileapimodel
+package fileapi
 /**
  *@description 文件API接口模块-Http实现
  *@author	wupeng364@outlook.com
@@ -12,7 +12,7 @@ import(
 	"strings"
 	"common/stringtools"
 	"modules/filemanage"
-	"modules/httpservermodel"
+	"modules/httpserver"
 	"time"
 	"io"
 )
@@ -31,12 +31,12 @@ const(
  * 文件基础操作网络接口
  */
 type imp_http struct{
-	fm *filemanage.FileManageModel
-	hs *httpservermodel.HttpServerModel
+	fm *filemanage.FileManageModule
+	hs *httpserver.HttpServerModule
 }
 
-// 向 HttpServerModel 中注册服务地址
-func (fa imp_http) init(fm *filemanage.FileManageModel, hs *httpservermodel.HttpServerModel){
+// 向 HttpServerModule 中注册服务地址
+func (fa imp_http) init(fm *filemanage.FileManageModule, hs *httpserver.HttpServerModule){
 	fa.fm = fm; fa.hs = hs
 	// 批量注册
 	res := fa.hs.AddRegistrar(fa)
@@ -56,7 +56,7 @@ func (fa imp_http) init(fm *filemanage.FileManageModel, hs *httpservermodel.Http
 	if res != nil {
 		panic("imp_http AddHandlerFunc - openfile failed")
 	}
-	fmt.Println("   > FileApiModel http registered end")
+	fmt.Println("   > FileApiModule http registered end")
 }
 
 // 向 Server Router 中注册下列处理器 , 实现接口 httpservertools.Registrar
@@ -171,7 +171,6 @@ func (fa imp_http) List( w http.ResponseWriter, r *http.Request ){
 // 批量|单个删除文件|文件夹
 func (fa imp_http) Del( w http.ResponseWriter, r *http.Request ){
 	q_path := r.FormValue("path")
-	fmt.Println(r.URL, r.Body, q_path)
 	if len(q_path) == 0 {
 		sendError(w, errors.New("'Path' parameter not found")); return
 	}

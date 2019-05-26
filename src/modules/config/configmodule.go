@@ -1,4 +1,4 @@
-package configmodel
+package config
 /**
  *@description 配置文件模块
  *@author	wupeng364@outlook.com
@@ -16,44 +16,44 @@ const(
 	cfgPath = "/config/config.json"
 )
 
-type ConfigModel struct{
+type ConfigModule struct{
 	appConfig map[string]interface{}
 	appWorkPath string
 	configPath string
 }
 
 // 返回模块信息
-func (cm *ConfigModel)MInfo( )(*gomodule.ModelInfo)	{
-	return &gomodule.ModelInfo{
+func (cm *ConfigModule)MInfo( )(*gomodule.ModuleInfo)	{
+	return &gomodule.ModuleInfo{
 		cm,
-		"ConfigModel",
+		"ConfigModule",
 		1.0,
 		"系统配置模块",
 	}
 }
 
 // 模块安装, 一个模块只初始化一次
-func (cm *ConfigModel)MSetup( ) {
+func (cm *ConfigModule)MSetup( ) {
 	
 }
 // 模块升级, 一个版本执行一次
-func (cm *ConfigModel)MUpdate( ) {
+func (cm *ConfigModule)MUpdate( ) {
 	
 }
 
 // 每次启动加载模块执行一次
-func (cm *ConfigModel)OnMInit( getPointer func(m interface{})interface{} ) {
+func (cm *ConfigModule)OnMInit( ref gomodule.ReferenceModule ) {
 	cm.InitConfig( )
 	// fmt.Print("appConfig: ", cm.appConfig)
 }
 
 // 系统执行销毁时执行
-func (cm *ConfigModel)OnMDestroy( ) {
+func (cm *ConfigModule)OnMDestroy( ) {
 	
 }
 
 // ==============================================================================================
-func (cm *ConfigModel) InitConfig( ) error{
+func (cm *ConfigModule) InitConfig( ) error{
 	var appwd, cfg string
 	var err error
 
@@ -87,11 +87,11 @@ func (cm *ConfigModel) InitConfig( ) error{
 	//fmt.Println(cm.appConfig)
 	return nil
 }
-func (cm *ConfigModel) GetConfig(key string)(res string){
+func (cm *ConfigModule) GetConfig(key string)(res string){
 	return cm.GetConfigs(key).(string)
 }
 
-func (cm *ConfigModel) GetConfigs(key string)(res interface{}){
+func (cm *ConfigModule) GetConfigs(key string)(res interface{}){
 	// fmt.Printf("\r==>%p", cm)
 	if len( key ) == 0 || cm.appConfig == nil || len(cm.appConfig) == 0 {
 		return
@@ -138,7 +138,7 @@ func (cm *ConfigModel) GetConfigs(key string)(res interface{}){
 	}
 	return
 }
-func (cm *ConfigModel) SetConfig(key string, value string)error{
+func (cm *ConfigModule) SetConfig(key string, value string)error{
 	if len(key) ==0 || len(value)==0{
 		return errors.New("key or value is empty")
 	}
