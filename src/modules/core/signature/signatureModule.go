@@ -5,7 +5,6 @@ package signature
  *@author	wupeng364@outlook.com
 */
 import (
-	"fmt"
 	"sort"
 	"net/http"
 	"common/gomodule"
@@ -91,12 +90,16 @@ func (sm *SignatureModule)ApiFilter_Http(w http.ResponseWriter, r *http.Request,
 			}
 		}
 		
-		if len(keys) > 0 {
+		_keysLen := len(keys)
+		if  _keysLen > 0 {
 			sort.Strings(keys)
 			for i, val := range keys {
-				fmt.Println("i", i)
 				requestparameter += val+"="+r.Form[val][0]
+				if i < _keysLen-1 {
+					requestparameter += "&"
+				}
 			}
+			
 		}
 	}
 	// 校验参数合法性

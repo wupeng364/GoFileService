@@ -88,7 +88,6 @@
 			}
 			request.setHeader("ack", session.AccessKey);
 			request.setHeader("sign", md5(signPayload));
-			//console.log(request);
 			return request;
 		},
 		/**
@@ -212,9 +211,9 @@
 		saveSession: function( accessObj ){
 			var _key = "access_object";
 			// 在cookie中保存一天
-			sessionStorage.setItem(_key, "");
+			localStorage.setItem(_key, "");
 			if(accessObj && accessObj.AccessKey){
-				sessionStorage.setItem(_key, JSON.stringify(accessObj));
+				localStorage.setItem(_key, JSON.stringify(accessObj));
 				$tools.setCookie("ack", accessObj.AccessKey);
 			}
 		},
@@ -225,7 +224,7 @@
 		getSession: function(){
 			var _key = "access_object";
 			try{
-				return JSON.parse(sessionStorage.getItem(_key));
+				return JSON.parse(localStorage.getItem(_key));
 			}catch(err){
 				return null;
 			}
