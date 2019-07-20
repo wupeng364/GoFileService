@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>文件管理器</title>
+  <script type="text/javascript" src="/lib/import-core.js?v=2019.05.19"></script>
+  <script type="text/javascript" src="/lib/apis/fsapi.js?v=2019.2.14"></script>
+  <style type="text/css">
+    .ivu-layout{
+      height:100%;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="layout">
+      <Layout>
+          <Sider width="120" v-model="isCollapsed">
+            <div style="padding: 8px;text-align: center;">
+              <Icon type="md-flower" :style="{'font-size':'48px',color:'#c9ccd0'}"/>
+            </div>
+            <i-menu active-name="menu-files" theme="dark" width="auto" :class="menuitemClasses">
+                <Menu-Item name="menu-files" to="/files">
+                    <Icon type="ios-navigate"></Icon>
+                    <span>文件</span>
+                </Menu-Item>
+                <Menu-Item name="menu-setting" to="/settings">
+                    <Icon type="ios-settings"></Icon>
+                    <span>设置</span>
+                </Menu-Item>
+            </i-menu>
+            <div slot="trigger"></div>
+          </Sider>
+          <Layout>
+              <i-content :style="{background: '#fff', minHeight: '220px', height:'100%'}">
+                <router-view></router-view>
+              </i-content>
+          </Layout>
+        </Layout>
+    </div>
+  </div>
+  
+  <!-- 文件列表 -->
+  <template id="fslist">
+    <div style="height: 100%">
+      <div style="padding: 5px 20px;">
+          <div>
+              <i-button type="default" v-show="fsOperationButtons.shows.upload" @click="doRefresh">刷新</i-button>
+              <i-button type="default" v-show="fsOperationButtons.shows.upload" @click="fsUpload.showDrawer = true">上传</i-button>
+              <i-button type="default" v-show="fsOperationButtons.shows.newFolder" @click="onNewFolder">新建文件夹</i-button>
+              <i-button type="default" v-show="fsOperationButtons.shows.download" @click="doDownload">下载</i-button>
+              <i-button type="default" v-show="fsOperationButtons.shows.rename" @click="onRename">重命名</i-button>
+              <i-button type="default" v-show="fsOperationButtons.shows.delete" @click="doDelete">删除</i-button>
+              <i-button type="default" v-show="fsOperationButtons.shows.move" @click="doMove">移动</i-button>
+              <i-button type="default" v-show="fsOperationButtons.shows.copy" @click="doCopy">复制</i-button>
+          </div>
+      </div>
+      <div style="height: 30px;line-height: 30px;background: #f8f8f9;padding-left: 20px;">
+        <fs-address :rootname="fsAddress.rootname" :path="fsAddress.loadPath" @click="goToPath"></fs-address>
+      </div>
+      <i-table ref="fsSelection" v-fs-tableautoheight="120" :loading="loading" :columns="fsColumns" :data="fsData"
+        highlight-row="true" @on-row-click="onRowClick" @on-selection-change="onSelectionChange" ></i-table>
+      <Page show-total :total="fsData_Total" size="small" :page-size="fsData_PageSize" style="line-height: 45px;background: #FFF;float: right;padding: 0px 45px;" @on-change="loadDatePage"></Page>
+       <!-- 上传文件 -->
+      <Drawer title="上传文件" width="450px" :closable="false" v-model="fsUpload.showDrawer">
+        <div class="ivu-upload">
+          <div class="ivu-upload ivu-upload-drag" ref="uploadDrag" @click="doSelectFiels">
+            <input ref="upload_selector_file" type="file" multiple="multiple" class="ivu-upload-input">
+            <div style="padding: 20px 0px;">
+              <i class="ivu-icon ivu-icon-ios-cloud-upload" style="font-size: 52px; color: rgb(51, 153, 255);"></i>
+              <p>Click here to upload</p>
+            </div>
+          </div> 
+          <ul class="ivu-upload-list">
+            <li v-for="temp in fsUpload.files" v-if="!temp._upload.removed" class="ivu-upload-list-file">
+              <span>{{temp.name}}</span>
+              <i class="ivu-icon ivu-icon-ios-close ivu-upload-list-remove" @click="removeTask(temp._upload.index)"></i>
+              <div class="ivu-progress ivu-progress-normal ivu-progress-show-info">
+                <div class="ivu-progress-outer">
+                  <div class="ivu-progress-inner">
+                    <div v-if="!temp._upload.ps||temp._upload.ps<100" class="ivu-progress-bg" :style="{width: (temp._upload.ps?temp._upload.ps:0)+'%', height: '2px'}"></div>
+                    <div v-else class="ivu-progress-success-bg" style="width: 100%; height: 2px;"></div>
+                  </div>
+                </div> 
+                <span class="ivu-progress-text">
+                  <span :style="{color: temp._upload.err?'#b42525':'#515a6e'}" class="ivu-progress-text-inner">{{temp._upload.err?temp._upload.err:temp._upload.ps}}</span>
+                </span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </Drawer>
+      <!-- 复制文件 -->
+      <fs-copyfile :src-paths="fsCopyFile.srcPaths" :dest-path="fsCopyFile.destPath" :copy-settings="fsCopyFile.copySettings" :show-dailog="fsCopyFile.showDailog" @on-stop="even_StopCopy" @on-end="even_EndCopy"></fs-copyfile>
+      <!-- 移动文件 -->
+      <fs-movefile :src-paths="fsMoveFile.srcPaths" :dest-path="fsMoveFile.destPath" :move-settings="fsMoveFile.moveSettings" :show-dailog="fsMoveFile.showDailog" @on-stop="even_StopMove" @on-end="even_EndMove"></fs-movefile>
+        <!-- 选择目录 -->
+      <fs-selector :select-muti="fsSelector.selectMuti" :select-file="fsSelector.selectFile" :select-dir="fsSelector.selectDir" :start-path="fsSelector.startPath" :show-dailog="fsSelector.showDailog" @on-select="onSelectedFile" @on-cancel="onSelectCancel"></fs-selector>
+    </div>
+  </template>
+
+  <!-- 系统设置 -->
+  <template id="settings">
+    <div>
+      <p>功能正在开发中...</p>
+    </div>
+  </template>
+  
+  
+</body>
+<script type="text/javascript">
+  // 文件列表模板
+  var fsList = Vue.extend({
+    template: "#fslist",
+    data: function( ){
+      var self = this;
+      return {
+        fsCopyFile: {
+          showDailog: false,
+          srcPaths: [],
+          destPath: "",
+          copySettings: {
+            ignore: false,
+            replace: false,
+          },
+        },
+        fsMoveFile: {
+          showDailog: false,
+          srcPaths: [],
+          destPath: "",
+          moveSettings: {
+            ignore: false,
+            replace: false,
+          },
+        },
+        fsSelector: {
+          operationObj: false,
+          showDailog: false,
+          selectFile: true,
+          selectDir: true,
+          selectMuti: true,
+          startPath: "/",
+        },
+        fsAddress: {
+          rootPath:"/",
+          rootname:"根目录",
+          loadPath:""
+        },
+        fsUpload: {
+          max: 5,
+          load: 0,
+          index: 0,
+          showDrawer: false,
+          url: "/fsapi/upload/"+$tools.guid( ),
+          files: [],
+        },
+        loading: false,
+        fsColumns:[
+          {
+              type: 'selection',
+              width: 60,
+              align: 'center',
+          },
+          {
+              title: '文件名称',
+              key: 'Path',
+              render:function (h, params){
+                return h("fs-fileicon", {
+                  props:{
+                    node: params.row,
+                    isEditor: params.row.showRename?true:false
+                  },
+                  on:{
+                    click: self.doOpen,
+                    doRename: function(path, name){
+                      self.onRenameAfter(params.index, params.row, name);
+                    }
+                  }
+                });
+              }
+          },
+          {
+              title: '修改时间',
+              key: 'CtTime',
+              render:function (h, params){
+                return h("span", $tools.long2Time(params.row.CtTime));
+              }
+          },
+          {
+              title: '文件大小',
+              key: 'FileSize',
+              render:function (h, params){
+                if( params.row.IsFile ){
+                  return h("span", $tools.formatSize(params.row.FileSize));
+                }else{
+                  h("span", "");
+                }
+              }
+          }
+        ],
+        fsData:[],
+        fsData_All: [],
+        fsData_Total: 0,
+        fsData_PageSize: 60,
+        fsData_CurrentPageIndex: 1,
+        fsOperationButtons:{
+          shows: {
+            newFolder: true,
+            upload: false,
+            download:false,
+            rename: false,
+            delete: false,
+            move: false,
+            copy: false,
+          }
+        }
+      }
+      },
+      computed: {
+      },
+      methods: {
+        doRefresh: function( ){
+           this.doLoadData( this.fsAddress.loadPath );
+        },
+        loadDatePage: function( index ){
+          this.fsData_Total = this.fsData_All.length;
+          this.fsData_CurrentPageIndex = index?index:1;
+          var _end   = this.fsData_CurrentPageIndex*this.fsData_PageSize;
+          var _start = (this.fsData_CurrentPageIndex-1)*this.fsData_PageSize;
+          this.fsData = this.fsData_All.slice(_start>0?_start:0, _end);
+        },
+        doLoadData: function( path ){
+          if( this.loading ){ return; }
+          var self = this;
+          self.loading = true;
+          this.onSelectionChange([], {});
+          $fsApi.List( path ).then(function( data ){
+            self.fsData_All = data;
+            self.fsData_CurrentPageIndex = 1;
+            self.loadDatePage( );
+            self.loading = false;
+          }).catch(function(err){
+            self.loading = false;
+            self.$Message.error(err.toString( ));
+          });
+        },   
+
+        /* 重命名 */
+        doRename: function( index, row, name ){
+          row.showRename = false;
+          this.$set(this.fsData, index, row);
+          var self = this;
+          $fsApi.Rename(row.Path, name).then(function( ){
+            self.$Message.info("操作成功");
+            self.doRefresh( );
+          }).catch(function( err ){
+            self.$Message.error("操作失败: "+err.toString( ));
+            self.doRefresh( );
+          });
+        },
+        /** 新建文件夹 */
+        doNewFolder: function( index, row, name ){
+          var self = this;
+          $fsApi.NewFolder(this.fsAddress.loadPath+"/"+name).then(function( ){
+            self.$Message.info("操作成功");
+            self.doRefresh( );
+          }).catch(function( err ){
+             self.$Message.error("操作失败: "+err.toString( ));
+             self.doRefresh( );
+          });
+        },
+        /* 删除文件|文件夹 */
+        doDelete: function( ){
+          var select = this.$refs.fsSelection.getSelection( );
+          if( !select || select.length ==0 ){
+            return;
+          }
+          var del_loading = this.$Message.loading({
+              content: "正在删除...",
+              duration: 0
+          });
+          var errs = [];
+          var self = this;
+          function loop( i ){
+            if( !i ){ i = 0; }
+            if( i == select.length ){ 
+              del_loading( ); 
+              self.doRefresh( );
+              if( errs && errs.length > 0 ){
+                self.$Message.error({
+                    content: errs.join("</br>"),
+                    duration: 5
+                });
+              }
+              return; 
+            }
+            $fsApi.Delete(select[i].Path).then(function( ){
+              setTimeout(function( ){
+                loop( ++i );
+              });
+            }).catch(function(err){
+              errs.push( select[i].Path+"删除失败: "+ err );
+              loop( ++i );
+            });
+          };
+          loop( 0 );
+        },
+        /* 开始复制 */
+        doCopy: function( ){
+          // 设置源路径
+          this.fsCopyFile.srcPaths = this.$refs.fsSelection.getSelection( );
+          // 文件选择框
+          this.fsSelector.operationObj = this.fsCopyFile;
+          this.fsSelector.selectFile = false;
+          this.fsSelector.selectDir  = true;
+          this.fsSelector.selectMuti = false;
+          this.fsSelector.startPath  = this.fsAddress.loadPath;
+          this.fsSelector.showDailog = true;
+        },
+        /* 开始移动 */
+        doMove: function( ){
+            // 设置源路径
+            this.fsMoveFile.srcPaths = this.$refs.fsSelection.getSelection( );
+            // 文件选择框
+            this.fsSelector.operationObj = this.fsMoveFile;
+            this.fsSelector.selectFile = false;
+            this.fsSelector.selectDir  = true;
+            this.fsSelector.selectMuti = false;
+            this.fsSelector.startPath  = this.fsAddress.loadPath;
+            this.fsSelector.showDailog = true;
+        },
+        /* 下载单个|多个文件 */
+        doDownload: function( ){
+          var select = this.$refs.fsSelection.getSelection( );
+          if( !select || select.length == 0 ){
+            return;
+          }
+          var self = this;
+          for (var i = select.length - 1; i >= 0; i--) {
+            if( !select[i].IsFile ){ continue; }
+            $fsApi.GetDownloadUrl( select[i].Path ).then(function(data){
+              self.$nextTick(function( ){
+                var download = document.createElement("iframe");
+                download.src = data;
+                document.body.appendChild(download);
+              });
+            }).catch(function(err){
+              self.$Message.error("操作失败: "+select[i].Path+", "+err.toString( ));
+            });
+          }
+        },
+        /* 重命名文件|文件夹 */
+        onRename: function( ){
+          var select = this.$refs.fsSelection.getSelection( );
+          if( !select || select.length == 0 ){
+            return;
+          }
+          select[0].showRename = true;
+          for (var i = 0; i < this.fsData.length; i++) {
+            if(this.fsData[i].Path == select[0].Path){
+              this.$set(this.fsData, i, select[0]);
+            }
+          }
+        },
+        /* 打开文件 */
+        doOpen: function( node ){
+          if( !node.IsFile ){
+            this.goToPath( node.Path )
+          }else{
+            var self = this;
+            $fsApi.GetSteamUrl( node.Path ).then(function(data){
+              self.$nextTick(function( ){
+               window.open( data )
+              });
+            }).catch(function(err){
+              self.$Message.error("操作失败: "+node.Path+", "+err.toString( ));
+            });
+          }
+        },
+        /** 重命名|新建文件夹二合一事件 */
+        onRenameAfter: function( index, row, name ){
+          if(row.IsNewFolder){
+            this.doNewFolder(index, row, name);
+          }else{
+            this.doRename(index, row, name);
+          }
+        },
+        /** 新建文件 */
+        onNewFolder: function( ){
+          var temp = this.fsData;
+          temp.unshift({
+            "Path": "",
+            "IsFile": false,
+            "IsNewFolder": true,
+            "showRename": true,
+          });
+          this.$set(this, "fsData", temp);
+        },
+        // 上传-触发选择文件
+        doSelectFiels: function( ev ){
+          var self = this;
+          $tools.addEvent(this.$refs.upload_selector_file, "change", function( ev_data ){
+            if( ev_data.target.files ){
+              for(var i = 0; i < ev_data.target.files.length; i++){
+                var fs = ev_data.target.files[i];
+                fs._upload = {
+                  base: self.fsAddress.loadPath,
+                  index: self.fsUpload.files.length,
+                  updater: false,
+                  ps: 0,
+                };
+                self.fsUpload.files.push( fs );
+                self.doStartUpload( );
+              }
+            }
+            self.$refs.upload_selector_file.value = ""
+          }, {once: true});
+          $tools.triggerMouseEvent(this.$refs.upload_selector_file, "click");
+        },
+        // 上传-触发上传动作
+        doStartUpload: function( ){
+          if( this.fsUpload.files && this.fsUpload.files.length > 0 ){
+            if( this.fsUpload.load >= this.fsUpload.max || this.fsUpload.index >= this.fsUpload.files.length){
+              return;
+            }
+            this.fsUpload.load ++;
+            var file = this.fsUpload.files[this.fsUpload.index++];
+            if( file._upload.removed ){
+              this.fsUpload.load --;
+              this.$nextTick(this.doStartUpload);
+              return;
+            }
+            // file._upload.index = this.fsUpload.index-1;
+            var self = this;
+            file._upload.updater = $tools.uploadByFormData(this.fsUpload.url, file, {
+              form: {
+                "Save-Path": file._upload.base+"/"+file.name,
+              },
+              header: {
+                
+              },
+              progress: function( e ){
+                // 数据源为数组, 需要直接设置数组
+                file._upload.ps = Math.round((e.loaded/e.total)*1000)/10;
+                self.$set(self.fsUpload.files, file._upload.index, file);
+              },
+              error: function( e ){
+                file._upload.err = "上传失败";
+                self.$set(self.fsUpload.files, file._upload.index, file);
+              },
+              abort: function( e ){
+                file._upload.err = "上传取消";
+                self.$set(self.fsUpload.files, file._upload.index, file);
+              },
+              loadstart: function( e ){
+                file._upload.started = true;
+              },
+              loadend: function( e ){
+                self.fsUpload.load--;
+                file._upload.ended = true;
+                self.$nextTick(function( ){
+                  self.doStartUpload( );
+                });
+              }
+            });
+            file._upload.updater.start( );
+          }
+        },
+        // 上传 - 移除任务
+        removeTask: function( index ){
+          var file = this.fsUpload.files[index];
+          if( file ){
+            // 正在传输
+            if( !file._upload.ended && file._upload.started ){
+              file._upload.updater.abort( );
+            }
+            file._upload.removed = true;
+            this.$set(this.fsUpload.files, index, file);
+          }
+        },
+        // 上传 - 监听拖拽
+        doListenDrag: function( ){
+          var self = this;
+          this.$nextTick(function( ){
+            if( self.$refs.uploadDrag ){
+              self.$refs.uploadDrag.ondrop = function( evn ){
+                evn.preventDefault( );
+                var fileList = evn.dataTransfer.files;
+                console.log( evn, fileList );
+              }; 
+            }
+          });
+            
+        },
+
+        /* 选择单个文件夹 - OK */
+        onSelectedFile: function( rows ){
+          this.fsSelector.showDailog = false;
+          if( rows && rows[0] && rows[0].Path && rows[0].Path.length > 0 ){
+            if( this.fsSelector.operationObj  ){
+              // this.fsCopyFile.destPath = rows[0].Path;
+              // this.fsCopyFile.showDailog = true;
+              this.fsSelector.operationObj.destPath = rows[0].Path;
+              this.fsSelector.operationObj.showDailog = true;
+            }
+          }
+        },
+        /* 选择单个文件夹 - Cancel */
+        onSelectCancel: function( ){
+          this.fsSelector.showDailog = false;
+        },
+        even_StopCopy: function( ){
+          this.fsCopyFile.showDailog = false;
+        },
+        even_EndCopy: function( ){
+          this.fsCopyFile.showDailog = false;
+        },
+        even_StopMove: function( ){
+          this.fsMoveFile.showDailog = false;
+          this.doRefresh( );
+        },
+        even_EndMove: function( ){
+          this.fsMoveFile.showDailog = false;
+          this.doRefresh( );
+        },
+        goToPath: function( path ){
+          if( this.fsAddress.loadPath != path ){
+            this.fsAddress.loadPath = path;
+          }else{
+            this.doLoadData( path );
+          }
+        },
+        // 点击一行
+        onRowClick: function(row, index){
+          for (var i = 0; i < this.fsData.length; i++) {
+            if( this.fsData[i]._checked && index != i ){
+              this.$set( this.fsData[i], "_checked", false);
+            }
+          }
+          this.$set( this.fsData[index], "_checked", true);
+          this.onSelectionChange([row], row);
+        },
+        // 当Checkbox数据发生变化, 则需要刷新按钮
+        onSelectionChange: function( selection, row ){
+          // 处理按钮是否显示
+          {
+            this.fsOperationButtons.shows.download = false;
+            this.fsOperationButtons.shows.rename = false;
+            this.fsOperationButtons.shows.delete = false;
+            this.fsOperationButtons.shows.move = false;
+            this.fsOperationButtons.shows.copy = false;
+            var len_selection = selection.length;
+            // 选择一个或者以上
+            if( len_selection >= 1){
+              this.fsOperationButtons.shows.download = true;
+              this.fsOperationButtons.shows.delete = true;
+              this.fsOperationButtons.shows.move = true;
+              this.fsOperationButtons.shows.copy = true;
+
+            }
+            // 只选择了一个
+            if( len_selection == 1 ){
+              this.fsOperationButtons.shows.rename = true;
+            }
+          }
+        },
+      },
+      mounted: function( ){ },
+      created: function( ){
+        this.doListenDrag( );
+        this.goToPath(this.fsAddress.rootPath);
+        this.fsOperationButtons.shows.upload = true;
+      },
+      watch:{
+        'fsAddress.loadPath':function(n, o){
+          this.doLoadData( n );
+        }
+      }
+  });
+  // 设置
+  var settings = Vue.extend({
+    template:"#settings"
+  });
+</script>
+<script type="text/javascript">
+  // 页面路由
+  var router = new VueRouter({
+    routes: [
+      { path: '/files', component: fsList },
+      { path: '/settings', component: settings },
+    ]
+  });
+
+  var v = new Vue({
+    router : router,
+    data: function( ){
+      return {
+        isCollapsed: false,
+        loading: true
+      }
+      },
+      computed: {
+         menuitemClasses:function(){
+             return [
+                 'menu-item',
+                 this.isCollapsed ? 'collapsed-menu' : ''
+             ]
+         }
+      },
+      methods: {
+      },
+      mounted: function( ){
+        
+      },
+    created: function( ){
+      this.$router.push("/files");
+    },
+    watch:{
+      
+    }
+  }).$mount('#app');
+
+</script>
+
+</html>

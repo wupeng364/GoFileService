@@ -57,7 +57,7 @@ func IsFile(path string)bool{
     }
     return false
 }
-// 获取一级子目录(无序)
+// 获取一级子目录(无序), 无路径, 只是文件|目录名字
 func GetDirList(path string)[]string{
 	f, err := OpenFile(path)
 	defer	f.Close()

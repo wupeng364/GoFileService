@@ -223,73 +223,15 @@ Array.prototype.remove=function(dx){
 　　this.length-=1
 };
 
-// 队列
-;(function(root, handler){
-	if( !root.Queue ){
-		root.Queue = handler;
-	}
-})(this, function( ){
-	var list = [];
-	var self = this;
-
-	// 初始化队列数据
-	this.handler = function( ){
-		if( size && handler ){
-			while(list.length < size){
-				if( !self.push(handler( )) ){
-					break;
-				}
-			}
-		}
-	};
-	//向队列中添加数据
-	this.push = function(data){
-		if (data==null) {
-			return false;
-		}
-		//如果传递了size参数就设置了队列的大小
-		if(size != null && !isNaN(size)){
-			if (list.length == size) {
-				return false;
-			}
-		}
-		list.unshift(data);
-		return true;
-	};
-	//从队列中取出数据
-	this.pop = function( ){
-		var temp = list.pop( );
-		if( size && handler ){
-			self.handler( );
-		}
-		return temp;
-	};
-	//返回队列的大小
-	this.size = function( ){
-		return list.length;
-	};
-	//返回队列的内容
-	this.quere = function( ){
-		return list;
-	};
-	// 初始化队列数据
-	{
-		if(size && list.length < size){
-			self.handler( );
-		}
-	}
-});
 // Map
 ;(function(root, handler){
-	if( !root.Map ){
-		root.Map = handler;
-	}
+	root.Map = handler;
 })(this, function( ){
 	var self = this;
 	
 	this.entry = new Object( );
 	this.size = 0;
-	this.put = function (key , value){
+	this.set = function (key , value){
 		if(!this.has(key)){
 			self.size ++ ;
 		}

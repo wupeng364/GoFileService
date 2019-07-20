@@ -9,5 +9,8 @@
 		"addr":"",
 		"port":"8080",
 		"static":"./static"
+	},
+	"usermanage": {
+		"dbType": "sqlite"
 	}
 }

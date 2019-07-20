@@ -195,3 +195,9 @@ func Getpid( )string {
 func GetTimestamp( ) int64{
 	return time.Now().UnixNano( ) / 1e6
 }
+// 字符转MD5
+func String2MD5( str string )string{
+	md5Ctx := md5.New( )
+    md5Ctx.Write([]byte(str))
+    return hex.EncodeToString(md5Ctx.Sum(nil))
+}

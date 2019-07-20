@@ -23,11 +23,11 @@ type ReferenceModule func(m ModuleTemplate)interface{}
 // 模块模板
 type ModuleTemplate interface{
 	MInfo( )(*ModuleInfo)			// 返回模块信息
-	MSetup( )					    // 模块安装, 一个模块只初始化一次
-	MUpdate( )					    // 模块升级, 一个版本执行一次
+	OnMSetup(ReferenceModule)		// 模块安装, 一个模块只初始化一次
+	OnMUpdate(ReferenceModule)		// 模块升级, 一个版本执行一次
 	
-	OnMInit( ReferenceModule )   	// 每次启动加载模块执行一次
-	OnMDestroy( )					// 系统执行销毁时执行
+	OnMInit(ReferenceModule)   		// 每次启动加载模块执行一次
+	OnMDestroy(ReferenceModule)		// 系统执行销毁时执行
 }
 
 // 模块的描述

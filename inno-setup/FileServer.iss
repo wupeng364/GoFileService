@@ -1,8 +1,8 @@
 [Setup]
 AppName=File Service
 AppVerName=GoFileService
-VersionInfoVersion=1.0.1.0519
-VersionInfoTextVersion=2019-05-19
+VersionInfoVersion=1.1.1.0720
+VersionInfoTextVersion=2019-07-20
 LicenseFile=package-info\license.txt
 DefaultDirName={code:getInstallDir}
 DefaultGroupName=GoFileService
@@ -25,7 +25,6 @@ Source: "package-source\*"; Excludes:""; DestDir: "{app}"; Flags: ignoreversion 
 
 [Icons]
 ;¿ªÊ¼²Ëµ¥
-Name: "{group}\File Service"; Filename: "{app}\bin\openPage.url"; WorkingDir: {app}; IconFilename: "{app}\app.ico";
 Name: "{group}\{cm:UninstallProgram,File Service}"; Filename: "{uninstallexe}"
 
 [Registry]

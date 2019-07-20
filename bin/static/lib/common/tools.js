@@ -310,11 +310,9 @@
 		},
 		// From表单POST上传
 		uploadByFormData: function( url, file, ctrl ){
-			return new (function( _url, _file, _ctrl){
-				var self = this;
-				// 
-				this.ctrl = {
-					fileFormName: "file",
+			var uploader = {
+				ctrl: {
+					filekey: "file",
 					method: "POST",
 					header: { },
 					form: {},
@@ -324,85 +322,78 @@
 					error: function( e ){ },
 					abort: function( e ){ },
 					progress: function( e ){ },
-				};
-				this.ctrl = _Commons.extendAttrs(this.ctrl, _ctrl);
-
-				// HttpRequest
-				this.xhr = new XMLHttpRequest( );
-				this.xhr.upload.addEventListener('loadstart', this.ctrl.loadstart);
-			    this.xhr.upload.addEventListener('load', this.ctrl.load);
-				this.xhr.upload.addEventListener("loadend", this.ctrl.loadend);
-				this.xhr.upload.addEventListener("progress", this.ctrl.progress);
-			    this.xhr.upload.addEventListener('error', this.ctrl.error);
-			    this.xhr.upload.addEventListener('abort', this.ctrl.abort);
-
-				// FormData
-				this.formData = new FormData( );
-				for(var key in this.ctrl.form ){
-					this.formData.append(key, this.ctrl.form[key]);
-				}
-				this.formData.append(this.ctrl.fileFormName, _file);
-
-				// Method
-				this.abort = function( ){
-					this.xhr.abort( );
-				};
-				// Post
-				this.start = function( ){
-					this.xhr.open(this.ctrl.method, _url);
-					for( var key in this.ctrl.header ){
-						this.xhr.setRequestHeader(key, this.ctrl.header[key])
+				},
+				xhr: new XMLHttpRequest( ),
+				formData: new FormData( ),
+				abort: function( ){
+					uploader.xhr.abort( );
+				},
+				start: function( ){
+					uploader.xhr.open(uploader.ctrl.method, url);
+					for( var key in uploader.ctrl.header ){
+						uploader.xhr.setRequestHeader(key, uploader.ctrl.header[key])
 					}
-					this.xhr.overrideMimeType("application/octet-stream");
-					self.xhr.send( self.formData );
-				};
-
-			})( url, file, ctrl );
+					uploader.xhr.overrideMimeType("application/octet-stream");
+					uploader.xhr.send( uploader.formData );
+				}
+			};
+			// 合并配置
+			uploader.ctrl = _Commons.extendAttrs(uploader.ctrl, ctrl);
+		    // 添加表单
+			for(var key in uploader.ctrl.form ){
+				uploader.formData.append(key, uploader.ctrl.form[key]);
+			}
+			uploader.formData.append(uploader.ctrl.filekey, file);
+			// 绑定事件
+			uploader.xhr.upload.addEventListener('loadstart', uploader.ctrl.loadstart);
+		    uploader.xhr.upload.addEventListener('load', uploader.ctrl.load);
+			uploader.xhr.upload.addEventListener("loadend", uploader.ctrl.loadend);
+			uploader.xhr.upload.addEventListener("progress", uploader.ctrl.progress);
+		    uploader.xhr.upload.addEventListener('error', uploader.ctrl.error);
+		    uploader.xhr.upload.addEventListener('abort', uploader.ctrl.abort);
+		    uploader.xhr.onreadystatechange = function(e){
+		    	var xhr = e.target;
+		    	if(xhr.readyState == 4 && xhr.status!=200){
+		    		uploader.ctrl.error(new Error(xhr.responseText?xhr.responseText:xhr.statusText) );
+		    	}
+		    };
+		    return uploader;
 		},
 		// FileReader 请求体上传
 		uploadByFileReader: function ( url, blob, ctrl ){
-			return new (function( _url, _blob, _ctrl){
-				var self = this;
-				// 
-				this.ctrl = {
+			var uploader = {
+				ctrl: {
 					method: "POST",
 					header: {
 						"Content-Type": "text/plain"
 					},
 					progress: function( loaded, e ){ }
-				};
-				this.ctrl = _Commons.extendAttrs(this.ctrl, _ctrl);
-
-				// HttpRequest
-				this.xhr = new XMLHttpRequest( );
-				this.xhr.upload.addEventListener("progress", function(e){
+				},
+				xhr: new XMLHttpRequest( ),
+				reader: new FileReader( ),
+				abort: function( ){
+					uploader.reader.abort( );
+					uploader.xhr.abort( );
+				},
+				start: function( ){
+					uploader.xhr.open(uploader.ctrl.method, url);
+					for( var key in uploader.ctrl.header ){
+						uploader.xhr.setRequestHeader(key, uploader.ctrl.header[key])
+					}
+					uploader.xhr.overrideMimeType("application/octet-stream");
+					self.reader.readAsArrayBuffer(blob);
+				}
+			};
+			uploader.ctrl = _Commons.extendAttrs(uploader.ctrl, ctrl);
+			uploader.xhr.upload.addEventListener("progress", function(e){
 					if(e.lengthComputable){
-						self.ctrl.progress(Math.round((e.loaded * 100) / e.total), e);
+						uploader.ctrl.progress(Math.round((e.loaded * 100) / e.total), e);
 					}
-				}, false);
-
-				// FileReader
-				this.reader = new FileReader( );
-				this.reader.onload = function(evt) {
-					Uploader._Consolelog( evt )
-					self.xhr.send(evt.target.result);
-				};
-				// Method
-				this.abort = function( ){
-					this.reader.abort( );
-					this.xhr.abort( );
-				};
-				// Post
-				this.start = function( ){
-					this.xhr.open(this.ctrl.method, _url);
-					for( var key in this.ctrl.header ){
-						this.xhr.setRequestHeader(key, this.ctrl.header[key])
-					}
-					this.xhr.overrideMimeType("application/octet-stream");
-					self.reader.readAsArrayBuffer(_blob);
-				};
-
-			})( url, blob, ctrl );
+			}, false);
+			uploader.reader.onload = function(evt) {
+				self.xhr.send(evt.target.result);
+			};
+			return uploader;
 		},
 	});
 

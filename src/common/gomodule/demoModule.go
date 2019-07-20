@@ -14,11 +14,11 @@ func (dm *DemoModule)MInfo( )(*ModuleInfo)	{
 	return &ModuleInfo{ dm, "DemoModule", 1.0, "测试模板" }
 }
 // 模块安装, 一个模块只初始化一次
-func (dm *DemoModule)MSetup( ) {
+func (dm *DemoModule)OnMSetup( ref ReferenceModule ) {
 	
 }
 // 模块升级, 一个版本执行一次
-func (dm *DemoModule)MUpdate( ) {
+func (dm *DemoModule)OnMUpdate( ref ReferenceModule ) {
 	
 }
 
@@ -27,7 +27,7 @@ func (dm *DemoModule)OnMInit( ref ReferenceModule ) {
 	fmt.Println("DemoModule init start")
 }
 // 系统执行销毁时执行
-func (dm *DemoModule)OnMDestroy( ) {
+func (dm *DemoModule)OnMDestroy( ref ReferenceModule ) {
 	
 }
 

@@ -23,10 +23,10 @@ func LoadModule( mt ModuleTemplate ){
 	fmt.Printf("> Loading %s(%s)[%p] Start \r\n", mInfo.Name, mInfo.Description, mt)
 	
 	fmt.Printf("  > Do Check Setup \r\n")
-	doSetup( mInfo, mt.MSetup )
+	doSetup( mInfo, mt.OnMSetup )
 	
 	fmt.Printf("  > Do Check Update \r\n")
-	doUpdate( mInfo, mt.MSetup )
+	doUpdate( mInfo, mt.OnMSetup )
 	
 	fmt.Printf("  > Do Init function \r\n")
 	doInit( mInfo, mt.OnMInit )
@@ -47,7 +47,8 @@ func GetModuleReference( mt ModuleTemplate ) interface{}{
 	if val, ok := GetModule( mt.(ModuleTemplate).MInfo( ).Name ); ok {
 		return val
 	}
-	return nil
+	mInfo := mt.MInfo()
+	panic(errors.New("module not find: "+ mInfo.Name+"["+mInfo.Description+"]"))
 }
 
 // 模块调用, 返回值暂时无法处理
@@ -101,25 +102,25 @@ func doRecordModule( mi *ModuleInfo, mt ModuleTemplate ){
 	// fmt.Println(modules)
 }
 // 模块安装
-func doSetup( mi *ModuleInfo, mst func( ) ){
+func doSetup( mi *ModuleInfo, mst func(ReferenceModule) ){
 	setupVerKey := "modules."+mi.Name+".SetupVer"
 	if len(configs.GetConfig(setupVerKey)) == 0 {
-		mst( )
+		mst( GetModuleReference )
 		configs.SetConfig("modules."+mi.Name+".SetupDate", strconv.FormatInt(time.Now( ).UnixNano( ), 10))
 		configs.SetConfig(setupVerKey, strconv.FormatFloat(mi.Version, 'f', moduleVersionPrec, 64) )
 	}
 }
 // 模块升级
-func doUpdate( mi *ModuleInfo, mst func( ) ){
+func doUpdate( mi *ModuleInfo, mst func(ReferenceModule) ){
 	setupVerKey := "modules."+mi.Name+".SetupVer"
 	setupVerStr := strconv.FormatFloat(mi.Version, 'f', moduleVersionPrec, 64)
 	_historyVer := configs.GetConfig(setupVerKey)
 	if _historyVer != setupVerStr {
-		mst( )
+		mst( GetModuleReference )
 		configs.SetConfig(setupVerKey, setupVerStr )
 	}
 }
 // 模块初始化
-func doInit( mi *ModuleInfo, mst func( ReferenceModule ) ){
+func doInit( mi *ModuleInfo, mst func(ReferenceModule) ){
 	mst( GetModuleReference )
 }
