@@ -1,6 +1,12 @@
-# Project Information
-This is a project used by the author to learn Golang. This system supports simple virtual path mount, file basic operations (CRUD). The system reserves a lot of interfaces that have not been implemented. If you are interested, you can join together to learn.
+＃背景信息
+这是作者用来学习Golang的一个项目. 系统支持简单的虚拟路径安装, 文件基本操作(CRUD). 系统保留了许多尚未实现的接口. 如果您有兴趣, 可以一起学习.
 
-# Functionality
-* File virtual path Mount
-* Basic operation of the file (CRUD)
+# 项目信息
+* 配置文件: {gofs}/config/config.json
+* 默认端口: 8080
+* 默认用户: admin 密码空
+
+＃功能
+* 文件虚拟路径挂载
+* 文件的基本操作(CRUD)
+* 用户管理(CRUD)
