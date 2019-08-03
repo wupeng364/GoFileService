@@ -16,7 +16,7 @@ import (
     "crypto/md5"
 	"encoding/hex"
     "encoding/binary"
-    mrand "math/rand"
+    "math/rand"
 )
 var ClerPath = path.Clean
 var machineId []byte = GetMachineHash( )
@@ -42,7 +42,7 @@ func ByteToHexString(n []byte) string {
     return hex.EncodeToString(n)
 }
 func Rand() uint32 {
-    return uint32(mrand.Int31())
+    return uint32(rand.Int31())
 }
 // Int => Int64 => string
 func Int2String( i int64 ) string{

@@ -5,10 +5,10 @@ package gomodule
 */
 import (
 	"os"
+	"encoding/json"
 	"strings"
 	"errors"
 	"path/filepath"
-	"gofs/common/filetools"
 )
 const(
 	cfgPath = "/config/GoModuleConfig.json"
@@ -37,10 +37,10 @@ func (gmc *GoModuleConfig) InitConfig( ){
 	
 	// 配置文件位置
 	cfg = filepath.Join(appwd, cfgPath)
-	if filetools.IsFile(cfg) {
+	if isFile(cfg) {
 		gmc.configPath  = cfg
 	}else{
-		err = filetools.WriteFileAsJson(cfg, make(map[string]interface{}))
+		err = writeFileAsJson(cfg, make(map[string]interface{}))
 		if err == nil {
 			gmc.configPath  = cfg
 		}
@@ -49,7 +49,7 @@ func (gmc *GoModuleConfig) InitConfig( ){
 	
 	// Json to map
 	gmc.moduleConfig = make( map[string]interface{} )
-	err = filetools.ReadFileAsJson(cfg, &gmc.moduleConfig)
+	err = readFileAsJson(cfg, &gmc.moduleConfig)
 	if err != nil { panic(err); }
 	// fmt.Printf("%+v\r", gmc.moduleConfig)
 }
@@ -117,7 +117,7 @@ func (gmc *GoModuleConfig) SetConfig(key string, value string) error{
 				temp.(map[string]interface{})[keys[i]] = value
 			}
 			// fmt.Println( gmc.moduleConfig )
-			err := filetools.WriteFileAsJson(gmc.configPath, gmc.moduleConfig )
+			err := writeFileAsJson(gmc.configPath, gmc.moduleConfig )
 			return err
 		}
 		
@@ -145,4 +145,55 @@ func (gmc *GoModuleConfig) SetConfig(key string, value string) error{
 		}
 	}
 	return nil
+}
+
+// 读取Json文件
+func readFileAsJson( path string, v interface{} ) error{
+	if len(path) == 0 {
+		return &os.PathError{"ReadFile", "", os.ErrNotExist}
+	}
+	fp, err := os.OpenFile(path, os.O_RDONLY, 0755)
+    defer fp.Close()
+    
+    if err == nil {
+    	st, err_st := fp.Stat( )
+    	if err == nil{
+	        data := make([]byte, st.Size( ))
+			_, err = fp.Read(data)
+			if err == nil {
+				return json.Unmarshal(data, v)
+			}
+    	}else{
+    		err = err_st
+    	}
+    }
+    return err
+}
+// 写入Json文件
+func writeFileAsJson( path string, v interface{} ) error{
+	if len(path) == 0 {
+		return &os.PathError{"WriteFile", "", os.ErrNotExist}
+	}
+	fp, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+    defer fp.Close()
+    
+    if err == nil {
+    	data, err := json.Marshal(v)
+    	if err == nil {
+    		_, err := fp.Write(data)
+    		return err
+    	}else{
+    		return err
+    	}
+    }else{
+	    return err
+    }
+}
+// 是否是文件
+func isFile(path string)bool{
+	_stat, _err := os.Stat(path)
+    if _err == nil  {
+        return !_stat.IsDir()
+    }
+    return false
 }

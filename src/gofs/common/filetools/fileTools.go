@@ -338,6 +338,25 @@ func WriteFileAsJson( path string, v interface{} ) error{
 	    return err
     }
 }
+// 写入文本文件
+func WriteTextFile( path, text string ) error{
+	if len(path) == 0 {
+		return PathError_NotExist("WriteFile", "")
+	}
+	fp, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0755)
+    defer fp.Close()
+    
+    if err == nil {
+    	if err == nil {
+    		_, err := fp.Write( []byte(text) )
+    		return err
+    	}else{
+    		return err
+    	}
+    }else{
+	    return err
+    }
+}
 
 // ====================================== errors 
 // 路径已经存在的错误

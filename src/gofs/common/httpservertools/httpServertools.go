@@ -34,16 +34,16 @@ type ServiceRouter struct {
 
 // 根据注册的路由表调用对应的函数
 // 优先匹配全url > 正则url > 默认处理器 > 404
-func (rt *ServiceRouter)doHandle(w http.ResponseWriter, r *http.Request) {
+func (this *ServiceRouter)doHandle(w http.ResponseWriter, r *http.Request) {
 	// 如果是url全匹配, 则直接执行hand函数
-    if h, ok := rt.urlHandlersMap[r.URL.Path]; ok {
-    	if rt.isDebug {
+    if h, ok := this.urlHandlersMap[r.URL.Path]; ok {
+    	if this.isDebug {
 			fmt.Println("URL.Handler: ", r.URL.Path)
 		}
         h(w, r); return
     }else{
     	// 如果是url正则检查, 则需要检查正则, 正则为':'后面的字符
-    	for _, key := range rt.regexpHandlersIndex{
+    	for _, key := range this.regexpHandlersIndex{
     		_SymbolIndex := strings.Index(key, ":")
     		if _SymbolIndex == -1 {
 	    		continue
@@ -53,41 +53,41 @@ func (rt *ServiceRouter)doHandle(w http.ResponseWriter, r *http.Request) {
 	    		continue
     		}
 	    	if ok, _ := regexp.MatchString(_BaseUrl+key[_SymbolIndex+1:], r.URL.Path); ok {
-	    		if rt.isDebug {
+	    		if this.isDebug {
 					fmt.Println("URL.Handler.Regexp: ", key)
 				}
-		    	rt.regexpHandlersMap[key](w, r); 
+		    	this.regexpHandlersMap[key](w, r); 
 		    	return
 	    	}
     	
     	}
     }
 	// 没有注册的地址, 使用默认处理器
-	if rt.defaultHandler != nil {
-		rt.defaultHandler(w, r)	
+	if this.defaultHandler != nil {
+		this.defaultHandler(w, r)	
 	}else{
     	w.WriteHeader(http.StatusNotFound)
 	}
 }
-func (rt *ServiceRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (this *ServiceRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// 处理前进行过滤处理
-	if rt.isDebug {
+	if this.isDebug {
 		fmt.Println("URL.Path: ", r.URL.Path)
 	}
 	// 1.1 检擦是否有指定路径的全路径匹配过滤器设定, 优先处理
-	if nil != rt.urlFiltersMap {
-		if h, exist := rt.urlFiltersMap[r.URL.Path]; exist {
-			if rt.isDebug {
+	if nil != this.urlFiltersMap {
+		if h, exist := this.urlFiltersMap[r.URL.Path]; exist {
+			if this.isDebug {
 				fmt.Println("URL.Filter: ", r.URL.Path)
 			}
 			h(w, r, func( ){
-				rt.doHandle(w, r)
+				this.doHandle(w, r)
 			}); return
 		}
 	}
 	// 1.2 检擦是否有指定路径的正则匹配过滤器设定, 优先处理
-	if nil != rt.regexpFiltersIndex && len(rt.regexpFiltersIndex) > 0 {
-		for _, key := range rt.regexpFiltersIndex{
+	if nil != this.regexpFiltersIndex && len(this.regexpFiltersIndex) > 0 {
+		for _, key := range this.regexpFiltersIndex{
 			_SymbolIndex := strings.Index(key, ":")
     		if _SymbolIndex == -1 {
 	    		continue
@@ -98,159 +98,159 @@ func (rt *ServiceRouter) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     		}
 			
 	    	if ok, _ := regexp.MatchString(key[:_SymbolIndex]+key[_SymbolIndex+1:], r.URL.Path); ok {
-	    		if rt.isDebug {
+	    		if this.isDebug {
 					fmt.Println("URL.Filter.Regexp: ", key)
 				}
-	    		rt.regexpFiltersMap[key](w, r, func( ){
-					rt.doHandle(w, r)
+	    		this.regexpFiltersMap[key](w, r, func( ){
+					this.doHandle(w, r)
 				}); return
 	    	}
 		}
 	}
 	// 2. 检擦是否有全局过滤器存在, 如果有则执行它
-	if nil != rt.globalFileter {
-		rt.globalFileter(w, r, func( ){
-			rt.doHandle(w, r)
+	if nil != this.globalFileter {
+		this.globalFileter(w, r, func( ){
+			this.doHandle(w, r)
 		}); return
 	}
 	// 3. 啥也没有设定
-	rt.doHandle(w, r)
+	this.doHandle(w, r)
 }
 // 清空路由表
-func (rt *ServiceRouter) ClearHandlersMap( ){
-	rt.urlHandlersMap    = make(map[string]HandlersFunc)
-	rt.regexpHandlersMap = make(map[string]HandlersFunc)
-	rt.regexpHandlersIndex = make([]string, 0, 0)
+func (this *ServiceRouter) ClearHandlersMap( ){
+	this.urlHandlersMap    = make(map[string]HandlersFunc)
+	this.regexpHandlersMap = make(map[string]HandlersFunc)
+	this.regexpHandlersIndex = make([]string, 0, 0)
 }
 // 是否输出url
-func (rt *ServiceRouter) SetDebug( isDebug bool ){
-	rt.isDebug = isDebug
+func (this *ServiceRouter) SetDebug( isDebug bool ){
+	this.isDebug = isDebug
 }
 // 设置默认相应函数, 当无匹配时触发
-func (rt *ServiceRouter) SetDefaultHandler( defaultHandler HandlersFunc ){
-	rt.defaultHandler = defaultHandler
+func (this *ServiceRouter) SetDefaultHandler( defaultHandler HandlersFunc ){
+	this.defaultHandler = defaultHandler
 }
 // 设置全局过滤器, 设置后, 如果不调用next函数则不进行下一步处理
 // type FilterFunc func(http.ResponseWriter, *http.Request, func( ))
-func (rt *ServiceRouter)SetGlobalFilter( globalFilter FilterFunc ){
-	rt.globalFileter = globalFilter
+func (this *ServiceRouter)SetGlobalFilter( globalFilter FilterFunc ){
+	this.globalFileter = globalFilter
 }
 // 设置url过滤器, 设置后, 如果不调用next函数则不进行下一步处理
 // 过滤器有优先调用权, 正则匹配路径有先后顺序
 // type FilterFunc func(http.ResponseWriter, *http.Request, func( ))
-func (rt *ServiceRouter)AddUrlFilter( url string, filter FilterFunc ){
+func (this *ServiceRouter)AddUrlFilter( url string, filter FilterFunc ){
 	if len(url) == 0 {
 		return
 	}
-	if nil == rt.urlFiltersMap {
-		rt.urlFiltersMap = make(map[string]FilterFunc)
+	if nil == this.urlFiltersMap {
+		this.urlFiltersMap = make(map[string]FilterFunc)
 	}
-	if nil == rt.regexpFiltersMap {
-		rt.regexpFiltersMap = make(map[string]FilterFunc)
+	if nil == this.regexpFiltersMap {
+		this.regexpFiltersMap = make(map[string]FilterFunc)
 	}
-	if nil == rt.regexpFiltersIndex {
-		rt.regexpFiltersIndex = make([]string,0,0)
+	if nil == this.regexpFiltersIndex {
+		this.regexpFiltersIndex = make([]string,0,0)
 	}
 	if strings.Index(url, ":") > -1 {
-		rt.regexpFiltersMap[url] = filter
-		rt.regexpFiltersIndex = append(rt.regexpFiltersIndex, url)
+		this.regexpFiltersMap[url] = filter
+		this.regexpFiltersIndex = append(this.regexpFiltersIndex, url)
 	}else{
-		rt.urlFiltersMap[url] = filter
+		this.urlFiltersMap[url] = filter
 	}
 }
 // 删除filter索引
-func (rt *ServiceRouter) removeFilterIndex(url string){
+func (this *ServiceRouter) removeFilterIndex(url string){
 	if len(url) > 0 {
-		for i, key := range rt.regexpFiltersIndex{
+		for i, key := range this.regexpFiltersIndex{
 			if key == url {
-				rt.regexpFiltersIndex = append(rt.regexpFiltersIndex[:i], rt.regexpFiltersIndex[i+i:]...)
+				this.regexpFiltersIndex = append(this.regexpFiltersIndex[:i], this.regexpFiltersIndex[i+i:]...)
 				break
 			}
 		}
 	}
 }
 // 删除一个过滤器
-func (rt *ServiceRouter) RemoveFilter(url string){
+func (this *ServiceRouter) RemoveFilter(url string){
 	if len(url) == 0 {
 		return
 	}
-	if nil != rt.regexpHandlersMap {
-		if _, ok := rt.regexpFiltersMap[url]; ok {
-			delete(rt.regexpFiltersMap, url)
-			rt.removeFilterIndex(url)
+	if nil != this.regexpHandlersMap {
+		if _, ok := this.regexpFiltersMap[url]; ok {
+			delete(this.regexpFiltersMap, url)
+			this.removeFilterIndex(url)
 		}
 	}
-	if nil != rt.urlFiltersMap {
-		if _, ok := rt.urlFiltersMap[url]; ok {
-			delete(rt.urlFiltersMap, url)
+	if nil != this.urlFiltersMap {
+		if _, ok := this.urlFiltersMap[url]; ok {
+			delete(this.urlFiltersMap, url)
 		}
 	}
 }
 // 构建urlmap, 全匹配和正则匹配分开存放, 正则表达式以':'符号开始, 如: /upload/:\S+
-func (rt *ServiceRouter) AddHandlers( handlersMap map[string]HandlersFunc ){
+func (this *ServiceRouter) AddHandlers( handlersMap map[string]HandlersFunc ){
 	if len(handlersMap) == 0 {
 		return
 	}
-	if nil == rt.regexpHandlersMap {
-		rt.regexpHandlersMap = make(map[string]HandlersFunc)
-		rt.regexpHandlersIndex = make([]string, 0, 0)
+	if nil == this.regexpHandlersMap {
+		this.regexpHandlersMap = make(map[string]HandlersFunc)
+		this.regexpHandlersIndex = make([]string, 0, 0)
 	}
-	if nil == rt.urlHandlersMap {
-		rt.urlHandlersMap = make(map[string]HandlersFunc)
+	if nil == this.urlHandlersMap {
+		this.urlHandlersMap = make(map[string]HandlersFunc)
 	}	
 	for key, val := range handlersMap {
 		if strings.Index(key, ":") > -1 {
-			rt.regexpHandlersMap[key] = val
-			rt.regexpHandlersIndex = append(rt.regexpHandlersIndex, key)
+			this.regexpHandlersMap[key] = val
+			this.regexpHandlersIndex = append(this.regexpHandlersIndex, key)
 		}else{
-			rt.urlHandlersMap[key] = val
+			this.urlHandlersMap[key] = val
 		}
 	}
 }
 // 构建urlmap, 全匹配和正则匹配分开存放, 正则表达式以':'符号开始, 如: /upload/:\S+
-func (rt *ServiceRouter) AddHandler(url string, handler HandlersFunc ){
+func (this *ServiceRouter) AddHandler(url string, handler HandlersFunc ){
 	if len(url) == 0 {
 		return
 	}
-	if nil == rt.regexpHandlersMap {
-		rt.regexpHandlersMap = make(map[string]HandlersFunc)
-		rt.regexpHandlersIndex = make([]string, 0, 0)
+	if nil == this.regexpHandlersMap {
+		this.regexpHandlersMap = make(map[string]HandlersFunc)
+		this.regexpHandlersIndex = make([]string, 0, 0)
 	}
-	if nil == rt.urlHandlersMap {
-		rt.urlHandlersMap = make(map[string]HandlersFunc)
+	if nil == this.urlHandlersMap {
+		this.urlHandlersMap = make(map[string]HandlersFunc)
 	}
 	if strings.Index(url, ":") > -1 {
-		rt.regexpHandlersMap[url] = handler
-		rt.regexpHandlersIndex = append(rt.regexpHandlersIndex, url)
+		this.regexpHandlersMap[url] = handler
+		this.regexpHandlersIndex = append(this.regexpHandlersIndex, url)
 	}else{
-		rt.urlHandlersMap[url] = handler
+		this.urlHandlersMap[url] = handler
 	}
 }
 // 删除handler索引
-func (rt *ServiceRouter) removeHandlerIndex(url string){
+func (this *ServiceRouter) removeHandlerIndex(url string){
 	if len(url) > 0 {
-		for i, key := range rt.regexpHandlersIndex{
+		for i, key := range this.regexpHandlersIndex{
 			if key == url {
-				rt.regexpHandlersIndex = append(rt.regexpHandlersIndex[:i], rt.regexpHandlersIndex[i+i:]...)
+				this.regexpHandlersIndex = append(this.regexpHandlersIndex[:i], this.regexpHandlersIndex[i+i:]...)
 				break
 			}
 		}
 	}
 }
 // 删除一个路由表
-func (rt *ServiceRouter) RemoveHandler(url string){
+func (this *ServiceRouter) RemoveHandler(url string){
 	if len(url) == 0 {
 		return
 	}
-	if nil != rt.regexpHandlersMap {
-		if _, ok := rt.regexpHandlersMap[url]; ok {
-			delete(rt.regexpHandlersMap, url)
-			rt.removeHandlerIndex(url)
+	if nil != this.regexpHandlersMap {
+		if _, ok := this.regexpHandlersMap[url]; ok {
+			delete(this.regexpHandlersMap, url)
+			this.removeHandlerIndex(url)
 		}
 	}
-	if nil != rt.urlHandlersMap {
-		if _, ok := rt.urlHandlersMap[url]; ok {
-			delete(rt.urlHandlersMap, url)
+	if nil != this.urlHandlersMap {
+		if _, ok := this.urlHandlersMap[url]; ok {
+			delete(this.urlHandlersMap, url)
 		}
 	}
 }

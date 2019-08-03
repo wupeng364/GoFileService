@@ -7,6 +7,7 @@ package httpclienttools
 import (
 	"os"
 	"io"
+	"time"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -14,6 +15,10 @@ import (
 	"mime/multipart"
 	"bytes"
 )
+const(
+	_defaultTimeout = 30	// 单位s
+)
+
 func BuildUrlsWithMap(url string, params map[string]string) (string) {
 	result := url
 	p_len  := len(params)
@@ -45,19 +50,34 @@ func BuildUrlsWithArrays(url string, params [][]string) (string) {
 	}
 	return result
 }
-// http Get
-func Get(url string, params map[string]string)(string, error){
-    _, body, err := DoFormUrlEncoded("GET", url, params, nil)
-    return body, err
+// Get
+func Get(url string, params map[string]string, headers map[string]string)(*http.Response, error){
+    return DoFormUrlEncoded("GET", url, params, headers, _defaultTimeout)
 }
-// http Post
-func Post(url string, params map[string]string)(string, error){
-    _, body, err := DoFormUrlEncoded("POST", url, params, nil)
-    return body, err
+// Get Body
+func GetResponseBody(url string, params map[string]string, headers map[string]string)(string, error){
+    resp, err := Get(url, params, headers)
+    defer func(){
+	    if nil != resp {
+		    resp.Body.Close()
+	    }
+    }()
+    if nil != err {
+	    return "", err
+    }
+    // red response 
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+       return "", err
+    }
+    return string(body), nil
 }
-
+// Post
+func Post(url string, params map[string]string, headers map[string]string)(*http.Response, error){
+    return DoFormUrlEncoded("POST", url, params, headers, _defaultTimeout)
+}
 // http Do Form Url Encoded
-func DoFormUrlEncoded( reqType, url string, params, headers map[string]string) (*http.Response, string, error) {
+func DoFormUrlEncoded( reqType, url string, params, headers map[string]string, timeout int64)(*http.Response, error){
     
 	// build query
 	query := ""
@@ -75,7 +95,7 @@ func DoFormUrlEncoded( reqType, url string, params, headers map[string]string) (
 	// build request method
     req, err := http.NewRequest(reqType, url, strings.NewReader(query))
     if err != nil {
-        return nil, "", err
+        return nil, err
     }
     
 	// set headers 
@@ -88,33 +108,26 @@ func DoFormUrlEncoded( reqType, url string, params, headers map[string]string) (
     
 	// do request
 	client := &http.Client{}
-    resp, err := client.Do(req)
-    defer resp.Body.Close()
-	if err != nil {
-		 return resp, "", err
+	if timeout > -1 {
+		client.Timeout = time.Second*time.Duration( timeout )
 	}
-
-	// red response 
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-       return nil, "", err
-    }
-    return resp, string(body), err
+	
+    return client.Do(req)
 }
 
 // http Do Form Url Encoded
-func PostJson( url string, params interface{}, headers map[string]string) (*http.Response, string, error) {
+func PostJson( url string, params interface{}, headers map[string]string) (*http.Response, error) {
     
 	// build query
 	query, err := json.Marshal(params)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 	
 	// build request method
     req, err := http.NewRequest("POST", url, bytes.NewBuffer(query))
     if err != nil {
-        return nil, "", err
+        return nil, err
     }
     
 	// set headers 
@@ -127,25 +140,14 @@ func PostJson( url string, params interface{}, headers map[string]string) (*http
     
 	// do request
 	client := &http.Client{}
-    resp, err := client.Do(req)
-    defer resp.Body.Close()
-	if err != nil {
-		 return resp, "", err
-	}
-
-	// red response 
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-       return nil, "", err
-    }
-    return resp, string(body), err
+    return client.Do(req)
 }
 // 
-func PostFile(url, filePath string) (*http.Response, string, error) {
-	return PostMultiFile(url, "", filePath)
+func PostFile(url, filePath string) (*http.Response, error) {
+	return PostMultiFile(url, filePath, "")
 }
 // http post multi file
-func PostMultiFile(url, paramName, filePath string) (*http.Response, string, error) {
+func PostMultiFile(url, filePath, paramName string) (*http.Response, error) {
     body_buf := bytes.NewBufferString("")
     body_writer := multipart.NewWriter(body_buf)
 	if len(paramName) == 0 {
@@ -153,12 +155,12 @@ func PostMultiFile(url, paramName, filePath string) (*http.Response, string, err
 	}
     _, err := body_writer.CreateFormFile(paramName, filePath)
     if err != nil {
-        return nil, "", err
+        return nil, err
     }
 
     fh, err := os.Open(filePath)
     if err != nil {
-        return nil, "", err
+        return nil, err
     }
 
     boundary := body_writer.Boundary()
@@ -167,29 +169,16 @@ func PostMultiFile(url, paramName, filePath string) (*http.Response, string, err
     request_reader := io.MultiReader(body_buf, fh, close_buf)
     fi, err := fh.Stat( )
     if err != nil {
-        return nil, "", err
+        return nil, err
     }
     req, err := http.NewRequest("POST", url, request_reader)
     if err != nil {
-        return nil, "", err
+        return nil, err
     }
 
     req.Header.Add("Content-Type", "multipart/form-data; boundary="+boundary)
     req.ContentLength = fi.Size() + int64(body_buf.Len()) + int64(close_buf.Len())
 
     client := &http.Client{}
-    resp, err := client.Do(req)
-    defer resp.Body.Close()
-	if err != nil {
-		 return resp, "", err
-	}
-
-	// red response 
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-       return nil, "", err
-    }
-    return resp, string(body), err
-    
-    
+    return  client.Do(req)
 }
