@@ -5,10 +5,16 @@ package tokenmanager
  *@author	wupeng364@outlook.com
 */
 import(
-	"gofs/common/stringtools"
 	//"runtime"
 	"time"
 	"sync"
+	"os"
+	"strings"
+	"strconv"
+	"math/rand"
+    "crypto/md5"
+	"encoding/hex"
+    "encoding/binary"
 	//"fmt"
 )
 type TokenObject struct{
@@ -54,7 +60,7 @@ func(this *TokenManager) Init( )*TokenManager{
 // 生成令牌
 // Second=-1时, 不会自动销毁内存中的信息
 func(this *TokenManager) AskToken( tb *TokenObject ) string{
-	token := stringtools.GetUUID( )
+	token := getUUID( )
 	tb.regtime = time.Now().UnixNano( )
 	if tb.Second > -1 {
 		tb.expired = tb.regtime + tb.Second*int64(time.Second)
@@ -106,3 +112,55 @@ func(this *TokenManager) RefreshToken( tk string ){
 	}
 }
 
+
+// >================== uuid start ==================<
+// 获取机器唯一标识=主机名+进程ID+随机数=>MD5
+var _machineid []byte = func( )(machHash []byte) {
+	host, _ := os.Hostname()
+    machine := strings.Join([]string{
+        host,
+        strconv.FormatInt(int64(os.Getpid( )), 10),
+        hex.EncodeToString(func(n uint32)[]byte {
+		    uintByte := make([]byte, 4, 4)
+		    binary.BigEndian.PutUint32(uintByte, n)
+		    return uintByte
+		}( uint32(rand.Int31( )) ) ),
+    }, ",")
+    
+    md5Ctx := md5.New()
+    md5Ctx.Write([]byte(machine))
+    machHash = md5Ctx.Sum(nil)
+    return machHash
+}( )
+// 获取唯一ID
+func getUUID( ) string {
+	baseId := func( ) []byte {
+	    id := make([]byte, 0, 36)
+	    id = append(id, _machineid[0:4]...)
+	    id = append(id, func (i uint64) []byte {
+		    var buf = make([]byte, 8, 8)
+		    binary.BigEndian.PutUint64(buf, i)
+		    return buf
+		}(uint64(time.Now().UnixNano( )))...)
+	    id = append(id, func(n uint32)[]byte {
+			    uintByte := make([]byte, 4, 4)
+			    binary.BigEndian.PutUint32(uintByte, n)
+			    return uintByte
+		 }(uint32(rand.Int31()))...)
+	    return id
+	}( )
+	
+    gid := make([]byte, 0, 36)
+    id := []byte(hex.EncodeToString(baseId))
+    gid = append(gid, id[0:8]...)
+    gid = append(gid, '-')
+    gid = append(gid, id[8:12]...)
+    gid = append(gid, '-')
+    gid = append(gid, id[12:16]...)
+    gid = append(gid, '-')
+    gid = append(gid, id[16:20]...)
+    gid = append(gid, '-')
+    gid = append(gid, id[20:]...)
+    return string(gid)
+}
+// >================== uuid end ==================<
