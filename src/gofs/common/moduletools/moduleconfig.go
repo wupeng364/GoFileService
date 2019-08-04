@@ -11,16 +11,16 @@ import (
 	"path/filepath"
 )
 const(
-	cfgPath = "/config/GoModuleConfig.json"
+	cfgPath = "/config/modulecfg.json"
 )
 
-type GoModuleConfig struct{
+type modulecfg struct{
 	moduleConfig map[string]interface{}
 	appWorkPath string
 	configPath string
 }
 
-func (gmc *GoModuleConfig) InitConfig( ){
+func (gmc *modulecfg) InitConfig( ){
 	var appwd, cfg string
 	var err error
 
@@ -54,7 +54,7 @@ func (gmc *GoModuleConfig) InitConfig( ){
 	// fmt.Printf("%+v\r", gmc.moduleConfig)
 }
 
-func (gmc *GoModuleConfig) GetConfig(key string)(res string){
+func (gmc *modulecfg) GetConfig(key string)(res string){
 	if len( key ) == 0 || gmc.moduleConfig == nil || len(gmc.moduleConfig) == 0 {
 		return
 	}
@@ -101,7 +101,7 @@ func (gmc *GoModuleConfig) GetConfig(key string)(res string){
 	return
 }
 
-func (gmc *GoModuleConfig) SetConfig(key string, value string) error{
+func (gmc *modulecfg) SetConfig(key string, value string) error{
 	if len(key) ==0 || len(value)==0{
 		return errors.New("key or value is empty")
 	}

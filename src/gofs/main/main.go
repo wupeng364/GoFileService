@@ -5,13 +5,13 @@ package main
  *@author	wupeng364@outlook.com
  */
 import (
-	GModule "gofs/common/moduletools"
 	"fmt"
-	"gofs/modules/apis/fileapi"
-	"gofs/modules/apis/userapi"
+	"gofs/common/moduletools"
 	"gofs/modules/common/config"
 	"gofs/modules/common/httpserver"
 	"gofs/modules/common/sqlite"
+	"gofs/modules/apis/fileapi"
+	"gofs/modules/apis/userapi"
 	"gofs/modules/core/signature"
 	"gofs/modules/core/filemanage"
 	"gofs/modules/core/usermanage"
@@ -22,20 +22,20 @@ func main() {
 	// 加载模块&监听端口
 	{
 		// 加载基础模块
-		GModule.LoadModule(&config.ConfigModule{})
-		GModule.LoadModule(&sqlite.SqliteModule{})
-		GModule.LoadModule(&httpserver.HttpServerModule{})
+		moduletools.LoadModule(&config.ConfigModule{})
+		moduletools.LoadModule(&sqlite.SqliteModule{})
+		moduletools.LoadModule(&httpserver.HttpServerModule{})
 		// 加载业务模块
-		GModule.LoadModule(&filemanage.FileManageModule{})
-		GModule.LoadModule(&usermanage.UserManageModule{})
-		GModule.LoadModule(&signature.SignatureModule{})
+		moduletools.LoadModule(&filemanage.FileManageModule{})
+		moduletools.LoadModule(&usermanage.UserManageModule{})
+		moduletools.LoadModule(&signature.SignatureModule{})
 		// 加载Api网络模块
-		GModule.LoadModule(&fileapi.FsApiModule{})
-		GModule.LoadModule(&userapi.UserApiModule{})
+		moduletools.LoadModule(&fileapi.FsApiModule{})
+		moduletools.LoadModule(&userapi.UserApiModule{})
 		// 加载拓展模块
-		GModule.LoadModule(&htmlpage.HtmlModule{})
+		moduletools.LoadModule(&htmlpage.HtmlModule{})
 
 		// 启动监听
-		fmt.Println(GModule.Invoke("HttpServerModule", "DoStartServer")[0].Interface().(error))
+		fmt.Println(moduletools.Invoke("HttpServerModule", "DoStartServer")[0].Interface().(error))
 	}
 }

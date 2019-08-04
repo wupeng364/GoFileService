@@ -5,11 +5,11 @@ package fileapi
  *@author	wupeng364@outlook.com
 */
 import (
+	"fmt"
 	"gofs/common/moduletools"
 	"gofs/modules/core/filemanage"
 	"gofs/modules/core/signature"
 	"gofs/modules/common/httpserver"
-	"fmt"
 )
 type FsApiModule struct{
 	fm *filemanage.FileManageModule

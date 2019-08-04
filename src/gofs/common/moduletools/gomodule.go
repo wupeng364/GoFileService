@@ -34,17 +34,17 @@ func LoadModule( mt ModuleTemplate ){
 	// fmt.Println("moduleMethods: ", moduleMethods )
 }
 
-// 获取某个模块
-func GetModule( mId string )(val interface{}, ok bool){
+//  根据模块ID获取模块指针记录, 可以获取一个已经实例化的模块
+func GetModuleById( mId string )(val interface{}, ok bool){
 	if v, ok := modules[mId]; ok {
 		return v, true
 	}
 	return nil, false
 }
 
-// 获取模块指针记录, 可以获取一个已经实例化的模块
-func GetModuleReference( mt ModuleTemplate ) interface{}{
-	if val, ok := GetModule( mt.(ModuleTemplate).MInfo( ).Name ); ok {
+// 根据模板对象获取模块指针记录, 可以获取一个已经实例化的模块
+func GetModuleByTemplate( mt ModuleTemplate ) interface{}{
+	if val, ok := GetModuleById( mt.(ModuleTemplate).MInfo( ).Name ); ok {
 		return val
 	}
 	mInfo := mt.MInfo()
@@ -105,7 +105,7 @@ func doRecordModule( mi *ModuleInfo, mt ModuleTemplate ){
 func doSetup( mi *ModuleInfo, mst func(ReferenceModule) ){
 	setupVerKey := "modules."+mi.Name+".SetupVer"
 	if len(configs.GetConfig(setupVerKey)) == 0 {
-		mst( GetModuleReference )
+		mst( GetModuleByTemplate )
 		configs.SetConfig("modules."+mi.Name+".SetupDate", strconv.FormatInt(time.Now( ).UnixNano( ), 10))
 		configs.SetConfig(setupVerKey, strconv.FormatFloat(mi.Version, 'f', moduleVersionPrec, 64) )
 	}
@@ -116,11 +116,11 @@ func doUpdate( mi *ModuleInfo, mst func(ReferenceModule) ){
 	setupVerStr := strconv.FormatFloat(mi.Version, 'f', moduleVersionPrec, 64)
 	_historyVer := configs.GetConfig(setupVerKey)
 	if _historyVer != setupVerStr {
-		mst( GetModuleReference )
+		mst( GetModuleByTemplate )
 		configs.SetConfig(setupVerKey, setupVerStr )
 	}
 }
 // 模块初始化
 func doInit( mi *ModuleInfo, mst func(ReferenceModule) ){
-	mst( GetModuleReference )
+	mst( GetModuleByTemplate )
 }

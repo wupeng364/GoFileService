@@ -13,7 +13,7 @@ const(
 )
 
 var modules  = make(map[string]interface{}) // 模块Map表
-var configs = &GoModuleConfig{ }           // 配置模块
+var configs = &modulecfg{ }           		// 配置模块
 
 // 函数执行后的返回值, 暂时不封装
 type Returns []reflect.Value
