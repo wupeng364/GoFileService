@@ -12,15 +12,14 @@ import (
 	"fmt"
 )
 type FileManageModule struct{
-	cfgModule *config.ConfigModule
+	cfgModule *config.ConfigModule `auto-assign:"true"`
 	mt 		 *MountManager
 	tk		 *tokenmanager.TokenManager
 }
 
 // 返回模块信息
-func (this *FileManageModule)MInfo( )(*moduletools.ModuleInfo)	{
-	return &moduletools.ModuleInfo{
-		this,
+func (this *FileManageModule)MInfo( )(moduletools.ModuleInfo) {
+	return moduletools.ModuleInfo{
 		"FileManageModule",
 		1.0,
 		"文件管理模块",

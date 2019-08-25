@@ -17,9 +17,8 @@ type UserApiModule struct{
 }
 
 // 返回模块信息
-func (this *UserApiModule)MInfo( )(*moduletools.ModuleInfo)	{
-	return &moduletools.ModuleInfo{
-		this,
+func (this *UserApiModule)MInfo( )(moduletools.ModuleInfo)	{
+	return moduletools.ModuleInfo{
 		"UserApiModule",
 		1.0,
 		"用户管理Api接口模块",

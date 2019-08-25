@@ -20,9 +20,8 @@ type SignatureModule struct{
 }
 
 // 返回模块信息
-func (this *SignatureModule)MInfo( )(*moduletools.ModuleInfo)	{
-	return &moduletools.ModuleInfo{
-		this,
+func (this *SignatureModule)MInfo( )(moduletools.ModuleInfo) {
+	return moduletools.ModuleInfo{
 		"SignatureModule",
 		1.0,
 		"Api接口签名模块",

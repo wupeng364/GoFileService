@@ -25,9 +25,8 @@ type HtmlModule struct{
 }
 
 // 返回模块信息
-func (this *HtmlModule)MInfo( )(*moduletools.ModuleInfo)	{
-	return &moduletools.ModuleInfo{
-		this,
+func (this *HtmlModule)MInfo( )(moduletools.ModuleInfo)	{
+	return moduletools.ModuleInfo{
 		"HtmlModule",
 		1.0,
 		"网页/静态资源处理",

@@ -16,9 +16,8 @@ type UserManageModule struct{
 }
 
 // 返回模块信息
-func (this *UserManageModule)MInfo( )(*moduletools.ModuleInfo) {
-	return &moduletools.ModuleInfo{
-		this,
+func (this *UserManageModule)MInfo( )(moduletools.ModuleInfo) {
+	return moduletools.ModuleInfo{
 		"UserManageModule",
 		1.0,
 		"用户管理模块",

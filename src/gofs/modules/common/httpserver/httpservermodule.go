@@ -22,9 +22,8 @@ type HttpServerModule struct{
 }
 
 // 返回模块信息
-func (this *HttpServerModule)MInfo( )(*moduletools.ModuleInfo)	{
-	return &moduletools.ModuleInfo{
-		this,
+func (this *HttpServerModule)MInfo( )(moduletools.ModuleInfo){
+	return moduletools.ModuleInfo{
 		"HttpServerModule",
 		1.0,
 		"HTTP服务模块",

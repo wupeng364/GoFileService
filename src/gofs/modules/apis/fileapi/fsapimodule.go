@@ -18,9 +18,8 @@ type FsApiModule struct{
 }
 
 // 返回模块信息
-func (this *FsApiModule)MInfo( )(*moduletools.ModuleInfo)	{
-	return &moduletools.ModuleInfo{
-		this,
+func (this *FsApiModule)MInfo( )(moduletools.ModuleInfo)	{
+	return moduletools.ModuleInfo{
 		"FsApiModule",
 		1.0,
 		"文件管理Api接口模块",

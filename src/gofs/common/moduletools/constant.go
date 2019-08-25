@@ -22,7 +22,7 @@ type ReferenceModule func(m ModuleTemplate)interface{}
 
 // 模块模板
 type ModuleTemplate interface{
-	MInfo( )(*ModuleInfo)			// 返回模块信息
+	MInfo( )(ModuleInfo)			// 返回模块信息
 	OnMSetup(ReferenceModule)		// 模块安装, 一个模块只初始化一次
 	OnMUpdate(ReferenceModule)		// 模块升级, 一个版本执行一次
 	
@@ -32,10 +32,9 @@ type ModuleTemplate interface{
 
 // 模块的描述
 type ModuleInfo struct{
-	Pointer interface{}
-	Name    string
-	Version float64
-	Description string
+	Name    string					// 模块ID
+	Version float64					// 模块版本
+	Description string				// 模块描述
 }
 
 // init

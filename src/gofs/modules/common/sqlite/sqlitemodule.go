@@ -19,9 +19,8 @@ type SqliteModule struct{
 }
 
 // 返回模块信息
-func (this *SqliteModule)MInfo( )(*moduletools.ModuleInfo)	{
-	return &moduletools.ModuleInfo{
-		this,
+func (this *SqliteModule)MInfo( )(moduletools.ModuleInfo)	{
+	return moduletools.ModuleInfo{
 		"SqliteModule",
 		1.0,
 		"Sqlite模块",

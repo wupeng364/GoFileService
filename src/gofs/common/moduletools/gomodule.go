@@ -11,8 +11,6 @@ import (
 	"strconv"
 )
 
-
-
 // 模块加载
 func LoadModule( mt ModuleTemplate ){
 	
@@ -34,6 +32,22 @@ func LoadModule( mt ModuleTemplate ){
 	// fmt.Println("moduleMethods: ", moduleMethods )
 }
 
+// ==================================public==================================<
+// 模块调用, 返回值暂时无法处理
+func Invoke(mId string, method string, params ...interface{} )Returns{
+	if module, ok := modules[mId]; ok {
+		val := reflect.ValueOf(module)
+		fun := val.MethodByName(method)
+		fmt.Printf( "   > Invoke: "+mId+"."+method+", %v, %+v \r\n", fun, &fun )
+		args := make([]reflect.Value, len(params))
+		for i, temp := range params{
+			args[i] = reflect.ValueOf(temp)
+		}
+		return fun.Call(args)
+	}else{
+		panic(errors.New("module not find: "+ mId))
+	}
+}
 //  根据模块ID获取模块指针记录, 可以获取一个已经实例化的模块
 func GetModuleById( mId string )(val interface{}, ok bool){
 	if v, ok := modules[mId]; ok {
@@ -50,59 +64,14 @@ func GetModuleByTemplate( mt ModuleTemplate ) interface{}{
 	mInfo := mt.MInfo()
 	panic(errors.New("module not find: "+ mInfo.Name+"["+mInfo.Description+"]"))
 }
-
-// 模块调用, 返回值暂时无法处理
-func Invoke(mId string, method string, params ...interface{} )Returns{
-	if module, ok := modules[mId]; ok {
-		val := reflect.ValueOf(module)
-		fun := val.MethodByName(method)
-		fmt.Printf( "   > Invoke: "+mId+"."+method+", %v, %+v \r\n", fun, &fun )
-		args := make([]reflect.Value, len(params))
-		for i, temp := range params{
-			args[i] = reflect.ValueOf(temp)
-		}
-		return fun.Call(args)
-	}else{
-		panic(errors.New("module not find: "+ mId))
-	}
-}
-// ==================================extends==================================<
-// 反射接口返回的接口内是否是空的
-func ValsIsNil( res Returns, index int, doErr func(err error) ){
-	// fmt.Println("ValsIsNil",res[index].Type( ).String( ), res[index].String( ), res[index].IsValid())
-	if res == nil || !res[index].IsValid( ) {
-		err := errors.New("The value of the return value subscript "+strconv.Itoa(index)+" is nil")
-		if doErr == nil{
-			panic( err )
-		}else{
-			doErr( err )
-		}
-	}
-}
-// 判断低X个参数是不是不为空的错误类型
-func ValsIsErr( res Returns, index int, doErr func(err error) ) bool{
-	if res != nil && !res[index].IsNil( ){
-		if res[index].Type( ).String( ) == "error" {
-			err := res[index].Interface( ).(error)
-			if doErr == nil{
-				panic( err )
-			}else{
-				doErr( err );
-			}
-			return true
-		}
-	}
-	return false
-}
-
 // ==================================private==================================<
 // 记录模块地址
-func doRecordModule( mi *ModuleInfo, mt ModuleTemplate ){
+func doRecordModule( mi ModuleInfo, mt ModuleTemplate ){
 	modules[mi.Name] = mt
 	// fmt.Println(modules)
 }
 // 模块安装
-func doSetup( mi *ModuleInfo, mst func(ReferenceModule) ){
+func doSetup( mi ModuleInfo, mst func(ReferenceModule) ){
 	setupVerKey := "modules."+mi.Name+".SetupVer"
 	if len(configs.GetConfig(setupVerKey)) == 0 {
 		mst( GetModuleByTemplate )
@@ -111,7 +80,7 @@ func doSetup( mi *ModuleInfo, mst func(ReferenceModule) ){
 	}
 }
 // 模块升级
-func doUpdate( mi *ModuleInfo, mst func(ReferenceModule) ){
+func doUpdate( mi ModuleInfo, mst func(ReferenceModule) ){
 	setupVerKey := "modules."+mi.Name+".SetupVer"
 	setupVerStr := strconv.FormatFloat(mi.Version, 'f', moduleVersionPrec, 64)
 	_historyVer := configs.GetConfig(setupVerKey)
@@ -121,6 +90,6 @@ func doUpdate( mi *ModuleInfo, mst func(ReferenceModule) ){
 	}
 }
 // 模块初始化
-func doInit( mi *ModuleInfo, mst func(ReferenceModule) ){
+func doInit( mi ModuleInfo, mst func(ReferenceModule) ){
 	mst( GetModuleByTemplate )
 }

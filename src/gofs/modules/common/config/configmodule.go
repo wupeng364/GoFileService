@@ -24,9 +24,8 @@ type ConfigModule struct{
 }
 
 // 返回模块信息
-func (this *ConfigModule)MInfo( )(*moduletools.ModuleInfo)	{
-	return &moduletools.ModuleInfo{
-		this,
+func (this *ConfigModule)MInfo( )(moduletools.ModuleInfo)	{
+	return moduletools.ModuleInfo{
 		"ConfigModule",
 		1.0,
 		"系统配置模块",
