@@ -1,6 +1,6 @@
 # 项目信息
 这是作者用来学习Golang的一个项目.系统支持简单的虚拟路径安装,文件基本操作(CRUD).系统并不完善,还遗留了许多尚未实现的接口.
-* 配置文件: {gofs}/config/config.json
+* 配置文件: {gofs}/config/gofs.default.json
 * 默认端口: 8080
 * 默认用户: admin 密码空
 

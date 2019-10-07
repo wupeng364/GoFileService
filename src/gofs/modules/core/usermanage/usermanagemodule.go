@@ -6,29 +6,32 @@ package usermanage
 */
 import (
 	//"fmt"
-	"gofs/common/moduletools"
-	"gofs/modules/common/config"
+	"gofs/common/moduleloader"
 )
 
 type UserManageModule struct{
-	cfg *config.ConfigModule
+	mctx *moduleloader.Loader
 	umi  userManageInterface
 }
 
 // 返回模块信息
-func (this *UserManageModule)MInfo( )(moduletools.ModuleInfo) {
-	return moduletools.ModuleInfo{
-		"UserManageModule",
-		1.0,
-		"用户管理模块",
+func (this *UserManageModule)ModuleOpts( )(moduleloader.Opts) {
+	return moduleloader.Opts{
+		Name: "UserManageModule",
+		Version: 1.0,
+		Description: "用户管理模块",
+		OnReady: func (mctx *moduleloader.Loader) {
+			this.mctx = mctx
+		},
+		OnInit: this.onMInit,
+		OnSetup: this.onMSetup,
 	}
 }
 
 // 模块安装, 一个模块只初始化一次
-func (this *UserManageModule)OnMSetup( ref moduletools.ReferenceModule ) {
-	cfg    := ref(this.cfg).(*config.ConfigModule)
-	dbType := cfg.GetConfig(cfc_db_type)
-	umi    := getUserManageInterfaceImp(dbType, ref)
+func (this *UserManageModule)onMSetup( ) {
+	dbType := this.mctx.GetConfig(cfc_db_type)
+	umi    := this.getUserManageInterfaceImp(dbType)
 	
 	// 执行建库、建表
 	err := umi.InitTables( )
@@ -36,21 +39,11 @@ func (this *UserManageModule)OnMSetup( ref moduletools.ReferenceModule ) {
 		panic( err )
 	}
 }
-// 模块升级, 一个版本执行一次
-func (this *UserManageModule)OnMUpdate( ref moduletools.ReferenceModule ) {
-	
-}
 
 // 每次启动加载模块执行一次
-func (this *UserManageModule)OnMInit( ref moduletools.ReferenceModule ) {
-	this.cfg = ref(this.cfg).(*config.ConfigModule)
-	dbType := this.cfg.GetConfig(cfc_db_type)
-	this.umi = getUserManageInterfaceImp(dbType, ref)
-}
-
-// 系统执行销毁时执行
-func (this *UserManageModule)OnMDestroy( ref moduletools.ReferenceModule ) {
-	
+func (this *UserManageModule)onMInit( ) {
+	dbType := this.mctx.GetConfig(cfc_db_type)
+	this.umi = this.getUserManageInterfaceImp(dbType)
 }
 
 // 列出所有用户数据, 无分页
@@ -100,13 +93,12 @@ func (this *UserManageModule)DelUser(userId string) error{
 func (this *UserManageModule)CheckPwd(userId, pwd string) bool{
 	return this.umi.CheckPwd( userId, pwd )
 }
-// ==============================================================================================
 // 获取启动类型, 并实例对象指针
-func getUserManageInterfaceImp( dbType string, ref moduletools.ReferenceModule )userManageInterface{
+func (this *UserManageModule)getUserManageInterfaceImp( dbType string )userManageInterface{
 	// 默认使用sqlite驱动
 	if true {
 		umi := &imp_sqlite{}
-		err := umi.InitDriver(ref(umi.db))
+		err := umi.InitDriver(this.mctx.GetModuleByTemplate(umi.db))
 		if nil != err {
 			panic( err )
 		}

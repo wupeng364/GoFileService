@@ -1,0 +1,13 @@
+{
+	"mount":{
+		"/":{
+			"addr":"./datas",
+			"type":"local"
+		}
+	},
+	"http":{
+		"addr":"",
+		"port":"8080",
+		"static":"./static"
+	}
+}

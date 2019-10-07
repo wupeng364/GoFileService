@@ -7,49 +7,31 @@ package signature
 import (
 	"sort"
 	"net/http"
-	"gofs/common/moduletools"
+	"gofs/common/moduleloader"
 	hst "gofs/common/httpservertools"
-	"gofs/modules/common/httpserver"
-	"gofs/modules/common/config"
 )
 
 type SignatureModule struct{
-	cfg 		*config.ConfigModule
-	httpserver  *httpserver.HttpServerModule
 	sign		signature
 }
 
 // 返回模块信息
-func (this *SignatureModule)MInfo( )(moduletools.ModuleInfo) {
-	return moduletools.ModuleInfo{
-		"SignatureModule",
-		1.0,
-		"Api接口签名模块",
+func (this *SignatureModule)ModuleOpts( )(moduleloader.Opts) {
+	return moduleloader.Opts{
+		Name: "SignatureModule",
+		Version: 1.0,
+		Description: "Api接口签名模块",
+		OnReady: func (mctx *moduleloader.Loader) {
+		},
+		OnInit: this.onMInit,
 	}
 }
 
-// 模块安装, 一个模块只初始化一次
-func (this *SignatureModule)OnMSetup( ref moduletools.ReferenceModule ) {
-	
-}
-// 模块升级, 一个版本执行一次
-func (this *SignatureModule)OnMUpdate( ref moduletools.ReferenceModule ) {
-	
-}
-
 // 每次启动加载模块执行一次
-func (this *SignatureModule)OnMInit( ref moduletools.ReferenceModule ) {
-	this.cfg = ref(this.cfg).(*config.ConfigModule)
-	this.httpserver = ref(this.httpserver).(*httpserver.HttpServerModule)
-	
+func (this *SignatureModule)onMInit( ) {
 	// 这里暂时只实现单机、本地内存版本
 	this.sign = &implement_Local{ }
 	this.sign.SignatureInitial()
-}
-
-// 系统执行销毁时执行
-func (this *SignatureModule)OnMDestroy( ref moduletools.ReferenceModule ) {
-	
 }
 
 // ==============================================================================================

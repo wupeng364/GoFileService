@@ -5,44 +5,34 @@ package filemanage
  *@author	wupeng364@outlook.com
 */
 import (
-	"gofs/common/moduletools"
+	"gofs/common/moduleloader"
 	"gofs/common/tokenmanager"
-	"gofs/modules/common/config"
 	"io"
 	"fmt"
 )
 type FileManageModule struct{
-	cfgModule *config.ConfigModule `auto-assign:"true"`
-	mt 		 *MountManager
-	tk		 *tokenmanager.TokenManager
+	mctx  *moduleloader.Loader
+	mt 	  *MountManager
+	tk	  *tokenmanager.TokenManager
 }
 
 // 返回模块信息
-func (this *FileManageModule)MInfo( )(moduletools.ModuleInfo) {
-	return moduletools.ModuleInfo{
-		"FileManageModule",
-		1.0,
-		"文件管理模块",
+func (this *FileManageModule)ModuleOpts( )(moduleloader.Opts) {
+	return moduleloader.Opts{
+		Name: "FileManageModule",
+		Version: 1.0,
+		Description: "文件管理模块",
+		OnReady: func (mctx *moduleloader.Loader) {
+			this.mctx = mctx
+		},
+		OnInit: this.onMInit,
 	}
-}
-// 模块安装, 一个模块只初始化一次
-func (this *FileManageModule)OnMSetup( ref moduletools.ReferenceModule ) {
-	
-}
-// 模块升级, 一个版本执行一次
-func (this *FileManageModule)OnMUpdate( ref moduletools.ReferenceModule ) {
-	
 }
 
 // 每次启动加载模块执行一次
-func (this *FileManageModule)OnMInit( ref moduletools.ReferenceModule) {
-	this.cfgModule = ref(this.cfgModule).(*config.ConfigModule)
-	this.mt = (&MountManager{}).initMountItems( this.cfgModule.GetConfigs(cfg_data_mount).(map[string]interface{}) )
+func (this *FileManageModule)onMInit( ) {
+	this.mt = (&MountManager{}).initMountItems( this.mctx.GetConfigs(cfg_data_mount).(map[string]interface{}) )
 	this.tk = (&tokenmanager.TokenManager{}).Init( )
-}
-// 系统执行销毁时执行
-func (this *FileManageModule)OnMDestroy( ref moduletools.ReferenceModule ) {
-	
 }
 
 // ==============================================================================================

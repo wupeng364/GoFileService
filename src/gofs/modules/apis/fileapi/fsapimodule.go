@@ -5,8 +5,7 @@ package fileapi
  *@author	wupeng364@outlook.com
 */
 import (
-	"fmt"
-	"gofs/common/moduletools"
+	"gofs/common/moduleloader"
 	"gofs/modules/core/filemanage"
 	"gofs/modules/core/signature"
 	"gofs/modules/common/httpserver"
@@ -17,42 +16,20 @@ type FsApiModule struct{
 	sg *signature.SignatureModule
 }
 
-// 返回模块信息
-func (this *FsApiModule)MInfo( )(moduletools.ModuleInfo)	{
-	return moduletools.ModuleInfo{
-		"FsApiModule",
-		1.0,
-		"文件管理Api接口模块",
+// 返回模块信息Name: 
+func (this *FsApiModule)ModuleOpts( )(moduleloader.Opts)	{
+	return moduleloader.Opts{
+		Name: "FsApiModule",
+		Version: 1.0,
+		Description: "文件管理Api接口模块",
+		OnReady: func (mctx *moduleloader.Loader) {
+			this.fm = mctx.GetModuleByTemplate(this.fm).(*filemanage.FileManageModule)
+			this.hs = mctx.GetModuleByTemplate(this.hs).(*httpserver.HttpServerModule)
+			this.sg = mctx.GetModuleByTemplate(this.sg).(*signature.SignatureModule)
+		},
+		OnInit: func ( ) {
+			// http 方式
+			(&imp_http{fm:this.fm, hs:this.hs, sg:this.sg,}).init( )
+		},
 	}
-}
-// 模块安装, 一个模块只初始化一次
-func (this *FsApiModule)OnMSetup( ref moduletools.ReferenceModule ) {
-	
-}
-// 模块升级, 一个版本执行一次
-func (this *FsApiModule)OnMUpdate( ref moduletools.ReferenceModule ) {
-	
-}
-
-// 每次启动加载模块执行一次
-func (this *FsApiModule)OnMInit(ref moduletools.ReferenceModule) {
-	this.fm = ref(this.fm).(*filemanage.FileManageModule)
-	this.hs = ref(this.hs).(*httpserver.HttpServerModule)
-	this.sg = ref(this.sg).(*signature.SignatureModule)
-	
-	// http 方式
-	(&imp_http{fm:this.fm, hs:this.hs, sg:this.sg,}).init( )
-	
-}
-// 系统执行销毁时执行
-func (this *FsApiModule)OnMDestroy( ref moduletools.ReferenceModule ) {
-	
-}
-
-// ==============================================================================================
-
-
-
-func sayHello( ){	
-	fmt.Println("..")
 }

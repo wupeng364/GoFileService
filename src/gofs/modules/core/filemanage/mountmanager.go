@@ -16,7 +16,7 @@ import(
 
 // 常量
 const(
-	cfg_data_mount string = "data"
+	cfg_data_mount string = "mount"
 	cfg_data_type  string = "type"
 	cfg_data_addr  string = "addr"
 

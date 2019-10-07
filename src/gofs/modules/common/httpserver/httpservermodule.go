@@ -8,8 +8,7 @@ package httpserver
 import (
 	hst "gofs/common/httpservertools"
 	"gofs/common/stringtools"
-	"gofs/common/moduletools"
-	"gofs/modules/common/config"
+	"gofs/common/moduleloader"
 	"strings"
 	"net/http"
 	"errors"
@@ -17,44 +16,35 @@ import (
 )
 type HttpServerModule struct{
 	serviceRouter  *hst.ServiceRouter
-	cfgModule *config.ConfigModule
+	mctx *moduleloader.Loader
 	listenAddr string
 }
 
 // 返回模块信息
-func (this *HttpServerModule)MInfo( )(moduletools.ModuleInfo){
-	return moduletools.ModuleInfo{
-		"HttpServerModule",
-		1.0,
-		"HTTP服务模块",
+func (this *HttpServerModule)ModuleOpts( )(moduleloader.Opts){
+	return moduleloader.Opts{
+		Name: "HttpServerModule",
+		Version: 1.0,
+		Description: "HTTP服务模块",
+		OnReady: func (mctx *moduleloader.Loader) {
+			this.mctx = mctx
+		},
+		OnInit: this.onMInit,
 	}
 }
 
-// 模块安装, 一个模块只初始化一次
-func (this *HttpServerModule)OnMSetup( ref moduletools.ReferenceModule ) {
-	
-}
-// 模块升级, 一个版本执行一次
-func (this *HttpServerModule)OnMUpdate( ref moduletools.ReferenceModule ) {
-	
-}
 
 // 每次启动加载模块执行一次
-func (this *HttpServerModule)OnMInit( ref moduletools.ReferenceModule ) {
+func (this *HttpServerModule)onMInit( ) {
 	this.serviceRouter = &hst.ServiceRouter{}
 	this.serviceRouter.ClearHandlersMap( )
 	this.serviceRouter.SetDebug(true)
 	
-	this.cfgModule = ref(this.cfgModule).(*config.ConfigModule)
-	cfgMap := this.cfgModule.GetConfigs(cfg_http).(map[string]interface{})
-	if len( cfgMap ) == 0 {
+	cfgMap, ok := this.mctx.GetConfigs(cfg_http).(map[string]interface{})
+	if !ok || len( cfgMap ) == 0 {
 		panic("http server config is nil")
 	}
 	this.listenAddr = cfgMap[cfg_http_addr].(string)+":"+cfgMap[cfg_http_port].(string)
-}
-// 系统执行销毁时执行
-func (this *HttpServerModule)OnMDestroy( ref moduletools.ReferenceModule ) {
-	
 }
 
 // ==============================================================================================

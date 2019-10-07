@@ -6,8 +6,7 @@ package sqlite
 */
 import (
 	"fmt"
-	"gofs/common/moduletools"
-	"gofs/modules/common/config"
+	"gofs/common/moduleloader"
 	"path/filepath"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
@@ -15,30 +14,20 @@ import (
 
 type SqliteModule struct{
 	dbSource string
-	cfg *config.ConfigModule
 }
 
 // 返回模块信息
-func (this *SqliteModule)MInfo( )(moduletools.ModuleInfo)	{
-	return moduletools.ModuleInfo{
-		"SqliteModule",
-		1.0,
-		"Sqlite模块",
+func (this *SqliteModule)ModuleOpts( )(moduleloader.Opts){
+	return moduleloader.Opts{
+		Name: "SqliteModule",
+		Version: 1.0,
+		Description: "Sqlite模块",
+		OnInit: this.onMInit,
 	}
 }
 
-// 模块安装, 一个模块只初始化一次
-func (this *SqliteModule)OnMSetup( ref moduletools.ReferenceModule ) {
-	
-}
-// 模块升级, 一个版本执行一次
-func (this *SqliteModule)OnMUpdate( ref moduletools.ReferenceModule ) {
-	
-}
-
 // 每次启动加载模块执行一次
-func (this *SqliteModule)OnMInit( ref moduletools.ReferenceModule ) {
-	this.cfg = ref(this.cfg).(*config.ConfigModule)
+func (this *SqliteModule)onMInit( ) {
 	path, err := filepath.Abs(cfg_db_path)
 	if nil != err {
 		panic(err)
@@ -47,12 +36,6 @@ func (this *SqliteModule)OnMInit( ref moduletools.ReferenceModule ) {
 	
 	fmt.Println("   > SqliteModule dbSource="+ this.dbSource)
 }
-
-// 系统执行销毁时执行
-func (this *SqliteModule)OnMDestroy( ref moduletools.ReferenceModule ) {
-	
-}
-
 // ==============================================================================================
 // 获取一个数据库连接
 func (this *SqliteModule)Open( )(*sql.DB, error){

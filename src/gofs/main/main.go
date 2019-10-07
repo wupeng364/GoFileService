@@ -6,8 +6,7 @@ package main
  */
 import (
 	"fmt"
-	"gofs/common/moduletools"
-	"gofs/modules/common/config"
+	"gofs/common/moduleloader"
 	"gofs/modules/common/httpserver"
 	"gofs/modules/common/sqlite"
 	"gofs/modules/apis/fileapi"
@@ -21,21 +20,17 @@ import (
 func main() {
 	// 加载模块&监听端口
 	{
+		mloader := moduleloader.New("gofs")
 		// 加载基础模块
-		moduletools.LoadModule(&config.ConfigModule{})
-		moduletools.LoadModule(&sqlite.SqliteModule{})
-		moduletools.LoadModule(&httpserver.HttpServerModule{})
+		mloader.Loads(&sqlite.SqliteModule{}, &httpserver.HttpServerModule{})
 		// 加载业务模块
-		moduletools.LoadModule(&filemanage.FileManageModule{})
-		moduletools.LoadModule(&usermanage.UserManageModule{})
-		moduletools.LoadModule(&signature.SignatureModule{})
+		mloader.Loads(&filemanage.FileManageModule{}, &usermanage.UserManageModule{}, &signature.SignatureModule{})
 		// 加载Api网络模块
-		moduletools.LoadModule(&fileapi.FsApiModule{})
-		moduletools.LoadModule(&userapi.UserApiModule{})
+		mloader.Loads(&fileapi.FsApiModule{}, &userapi.UserApiModule{})
 		// 加载拓展模块
-		moduletools.LoadModule(&htmlpage.HtmlModule{})
+		mloader.Load(&htmlpage.HtmlModule{})
 
 		// 启动监听
-		fmt.Println(moduletools.Invoke("HttpServerModule", "DoStartServer")[0].Interface().(error))
+		fmt.Println(mloader.Invoke("HttpServerModule", "DoStartServer")[0].Interface().(error))
 	}
 }

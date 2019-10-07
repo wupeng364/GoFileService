@@ -8,10 +8,9 @@ package htmlpage
 
 import (
 	"strings"
-	"gofs/common/moduletools"
+	"gofs/common/moduleloader"
 	// "common/filetools"
 	hst "gofs/common/httpservertools"
-	"gofs/modules/common/config"
 	"gofs/modules/common/httpserver"
 	"gofs/modules/core/signature"
 	"path/filepath"
@@ -19,37 +18,29 @@ import (
 	"fmt"
 )
 type HtmlModule struct{
-	cfgModule *config.ConfigModule
+	mctx *moduleloader.Loader
 	hsvModule *httpserver.HttpServerModule
 	sign 	  *signature.SignatureModule
 }
 
 // 返回模块信息
-func (this *HtmlModule)MInfo( )(moduletools.ModuleInfo)	{
-	return moduletools.ModuleInfo{
-		"HtmlModule",
-		1.0,
-		"网页/静态资源处理",
+func (this *HtmlModule)ModuleOpts( )(moduleloader.Opts){
+	return moduleloader.Opts{
+		Name: "HtmlModule",
+		Version: 1.0,
+		Description: "静态资源处理",
+		OnReady: func (mctx *moduleloader.Loader) {
+			this.mctx = mctx
+			this.hsvModule = mctx.GetModuleByTemplate(this.hsvModule).(*httpserver.HttpServerModule)
+			this.sign = mctx.GetModuleByTemplate(this.sign).(*signature.SignatureModule)
+		},
+		OnInit: this.onMInit,
 	}
 }
-
-// 模块安装, 一个模块只初始化一次
-func (this *HtmlModule)OnMSetup( ref moduletools.ReferenceModule ) {
-	
-}
-// 模块升级, 一个版本执行一次
-func (this *HtmlModule)OnMUpdate( ref moduletools.ReferenceModule ) {
-	
-}
-
 // 每次启动加载模块执行一次
-func (this *HtmlModule)OnMInit( ref moduletools.ReferenceModule ) {
-	this.cfgModule = ref(this.cfgModule).(*config.ConfigModule)
-	this.hsvModule = ref(this.hsvModule).(*httpserver.HttpServerModule)
-	this.sign = ref(this.sign).(*signature.SignatureModule)
-	
+func (this *HtmlModule)onMInit( ) {	
 	// config
-	static := this.cfgModule.GetConfig(cfg_http_static)
+	static := this.mctx.GetConfig(cfg_http_static)
 	if !filepath.IsAbs(static) {
 		temp, err := filepath.Abs(static)
 		if err != nil {
@@ -77,12 +68,6 @@ func (this *HtmlModule)OnMInit( ref moduletools.ReferenceModule ) {
 	
 	fmt.Println("   > Htmlpage Module http registered end")
 }
-// 系统执行销毁时执行
-func (this *HtmlModule)OnMDestroy( ref moduletools.ReferenceModule ) {
-	
-}
-
-
 // ==============================================================================================
 // 静态资源过滤器
 func (this *HtmlModule)staticFilter(w http.ResponseWriter, r *http.Request, next hst.FilterNext){
