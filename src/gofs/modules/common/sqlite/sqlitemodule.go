@@ -6,6 +6,7 @@ package sqlite
 */
 import (
 	"fmt"
+	"strings"
 	"gofs/common/moduleloader"
 	"path/filepath"
 	"database/sql"
@@ -14,6 +15,7 @@ import (
 
 type SqliteModule struct{
 	dbSource string
+	mctx *moduleloader.Loader
 }
 
 // 返回模块信息
@@ -22,13 +24,16 @@ func (this *SqliteModule)ModuleOpts( )(moduleloader.Opts){
 		Name: "SqliteModule",
 		Version: 1.0,
 		Description: "Sqlite模块",
+		OnReady: func (mctx *moduleloader.Loader){
+			this.mctx = mctx
+		},
 		OnInit: this.onMInit,
 	}
 }
 
 // 每次启动加载模块执行一次
 func (this *SqliteModule)onMInit( ) {
-	path, err := filepath.Abs(cfg_db_path)
+	path, err := filepath.Abs(strings.Replace(cfg_db_path, "{name}", this.mctx.GetLoaderName( ), -1))
 	if nil != err {
 		panic(err)
 	}

@@ -96,6 +96,10 @@ func (this *Loader)Load( mt Template ){
 }
 
 // >---------------- public --------------------<
+// 获取实例的名字
+func (this *Loader)GetLoaderName( ) string{
+	return this.name
+}
 // 模块调用, 返回 []reflect.Value 
 // 返回值暂时无法处理
 func (this *Loader)Invoke(mId string, method string, params ...interface{} )Returns{

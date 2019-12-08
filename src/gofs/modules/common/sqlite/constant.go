@@ -3,5 +3,5 @@ import(
 	// "errors"
 )
 const(
-	cfg_db_path = "./config/gofs.db"
+	cfg_db_path = "./config/{name}.db"
 )
