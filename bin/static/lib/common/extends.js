@@ -1,8 +1,16 @@
+// Copyright (C) 2020 WuPeng <wupeng364@outlook.com>.
+// Use of this source code is governed by an MIT-style.
+// Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction,
+// including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
+// and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+// String原型拓展&拓展对象
+
 "use strict";
-/**
- *@description prototype extends
- *@author	wupeng364@outlook.com
-*/
+
 // 路径处理去掉最后一个 / 避免 [ /admin/ ]出现
 String.prototype.getPath = function( ){
 	var temp=this.toString( );
@@ -223,47 +231,46 @@ Array.prototype.remove=function(dx){
 　　this.length-=1
 };
 
-// Map
+// Map 兼容的map对象
 ;(function(root, handler){
 	root.Map = handler;
 })(this, function( ){
-	var self = this;
-	
+	var _ = this;
 	this.entry = new Object( );
 	this.size = 0;
 	this.set = function (key , value){
 		if(!this.has(key)){
-			self.size ++ ;
+			_.size ++ ;
 		}
-		self.entry[key] = value;
+		_.entry[key] = value;
 	};
 	this.get = function (key){
-		return this.has(key) ? self.entry[key] : null;
+		return this.has(key) ? _.entry[key] : null;
 	};
 	this.has = function ( key ){
-		return (key in self.entry);
+		return (key in _.entry);
 	};
 	this.keys = function( ){
 		var keys = new Array();
-		for(var prop in self.entry){
+		for(var prop in _.entry){
 			keys.push(prop);
 		}
 		return keys;
 	};
 	this.delete = function ( key ){
-		if( this.has(key) && ( delete self.entry[key] ) ){
-			self.size --;
+		if( this.has(key) && ( delete _.entry[key] ) ){
+			_.size --;
 		}
 	};
 	this.values = function(){
 	    var values = new Array();
-	    for(var prop in self.entry){
-	      values.push(self.entry[prop]);
+	    for(var prop in _.entry){
+	      values.push(_.entry[prop]);
 	    }
 	    return values;
   	};
 	this.clear = function( ){
-		self.size = 0;
-		self.entry = new Object( );
+		_.size = 0;
+		_.entry = new Object( );
 	};
 });

@@ -2,9 +2,9 @@
 <html>
 <head>
   <title>登陆-文件管理器</title>
-  <script type="text/javascript" src="/lib/import-core.js?v=2019.7.03"></script>
-  <script type="text/javascript" src="/lib/apis/userapi.js?v=2019.7.03"></script>
-  <script type="text/javascript" src="/lib/3party_library/vector.js?v=2019.7.20"></script>
+  <script type="text/javascript" src="/lib/import-core.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/apis/userapi.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/3party_library/vector.js?v=2020.03.15"></script>
 </head>
 <style type="text/css">
   .login-warp{
@@ -57,11 +57,12 @@ var V_Index = new Vue({
     // 登陆
     handleSubmit: function( ){
       $userApi.login(this.loginform.user, this.loginform.password).then(function(data){
-        $fhttp.saveSession(JSON.parse(data));
+        $apitools.saveSession(JSON.parse(data));
         V_Index.$nextTick(function( ){
           window.location.href = "./main.html";
         });
       }).catch(function(err){
+        console.log(err)
         V_Index.$Message.error("登陆失败");
       })
     },

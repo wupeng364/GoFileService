@@ -2,8 +2,8 @@
 <html>
 <head>
   <title>文件管理器</title>
-  <script type="text/javascript" src="/lib/import-core.js?v=2019.05.19"></script>
-  <script type="text/javascript" src="/lib/apis/fsapi.js?v=2019.2.14"></script>
+  <script type="text/javascript" src="/lib/import-core.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/apis/fsapi.js?v=2020.03.15"></script>
   <style type="text/css">
     .ivu-layout{
       height:100%;
@@ -57,7 +57,7 @@
       <div style="height: 30px;line-height: 30px;background: #f8f8f9;padding-left: 20px;">
         <fs-address :rootname="fsAddress.rootname" :path="fsAddress.loadPath" @click="goToPath"></fs-address>
       </div>
-      <i-table ref="fsSelection" v-fs-tableautoheight="120" :loading="loading" :columns="fsColumns" :data="fsData"
+      <i-table ref="fsSelection" v-minus-height="120" :loading="loading" :columns="fsColumns" :data="fsData"
         highlight-row="true" @on-row-click="onRowClick" @on-selection-change="onSelectionChange" ></i-table>
       <Page show-total :total="fsData_Total" size="small" :page-size="fsData_PageSize" style="line-height: 45px;background: #FFF;float: right;padding: 0px 45px;" @on-change="loadDatePage"></Page>
        <!-- 上传文件 -->
@@ -150,7 +150,7 @@
           load: 0,
           index: 0,
           showDrawer: false,
-          url: "/fsapi/upload/"+$tools.guid( ),
+          url: "/fsapi/upload/"+$utils.guid( ),
           files: [],
         },
         loading: false,
@@ -182,7 +182,7 @@
               title: '修改时间',
               key: 'CtTime',
               render:function (h, params){
-                return h("span", $tools.long2Time(params.row.CtTime));
+                return h("span", $utils.long2Time(params.row.CtTime));
               }
           },
           {
@@ -190,7 +190,7 @@
               key: 'FileSize',
               render:function (h, params){
                 if( params.row.IsFile ){
-                  return h("span", $tools.formatSize(params.row.FileSize));
+                  return h("span", $utils.formatSize(params.row.FileSize));
                 }else{
                   h("span", "");
                 }
@@ -398,7 +398,7 @@
         // 上传-触发选择文件
         doSelectFiels: function( ev ){
           var self = this;
-          $tools.addEvent(this.$refs.upload_selector_file, "change", function( ev_data ){
+          $utils.addEvent(this.$refs.upload_selector_file, "change", function( ev_data ){
             if( ev_data.target.files ){
               for(var i = 0; i < ev_data.target.files.length; i++){
                 var fs = ev_data.target.files[i];
@@ -414,7 +414,7 @@
             }
             self.$refs.upload_selector_file.value = ""
           }, {once: true});
-          $tools.triggerMouseEvent(this.$refs.upload_selector_file, "click");
+          $utils.triggerMouseEvent(this.$refs.upload_selector_file, "click");
         },
         // 上传-触发上传动作
         doStartUpload: function( ){
@@ -431,7 +431,7 @@
             }
             // file._upload.index = this.fsUpload.index-1;
             var self = this;
-            file._upload.updater = $tools.uploadByFormData(this.fsUpload.url, file, {
+            file._upload.updater = $utils.uploadByFormData(this.fsUpload.url, file, {
               form: {
                 "Save-Path": file._upload.base+"/"+file.name,
               },
