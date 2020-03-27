@@ -111,7 +111,7 @@ func (fmg *FileManager) DoWrite(relativePath string, ioReader io.Reader) error {
 }
 
 // DoRead 读取文件
-func (fmg *FileManager) DoRead(relativePath string) (io.Reader, error) {
+func (fmg *FileManager) DoRead(relativePath string) (Reader, error) {
 	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoRead(relativePath)
 }

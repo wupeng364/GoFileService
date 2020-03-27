@@ -298,7 +298,7 @@ func (locl localDriver) DoCreat() (bool, error) {
 }
 
 // DoRead 读取文件, 需要手动关闭流
-func (locl localDriver) DoRead(relativePath string) (io.Reader, error) {
+func (locl localDriver) DoRead(relativePath string) (Reader, error) {
 	absDst, _, gpErr := getAbsolutePath(locl.mountNode, relativePath)
 	if nil != gpErr {
 		return nil, gpErr

@@ -58,7 +58,7 @@ func (signature *impByLocalCache) GenerateAccessToken(userID string, singnatureT
 // SignatureVerification 验证签名是否有效, 通过accessKey查找SecretKey然后校验参数
 // Todd 可以尝试绑定IP
 func (signature *impByLocalCache) SignatureVerification(accessKey, sign string, requestparameter string) bool {
-	if len(accessKey) == 0 || len(requestparameter) == 0 || len(sign) == 0 {
+	if len(accessKey) == 0 || len(sign) == 0 {
 		return false
 	}
 	tokenBody, exist := signature.cache.GetTokenBody(accessKey)

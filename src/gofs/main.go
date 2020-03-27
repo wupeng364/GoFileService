@@ -20,11 +20,11 @@ import (
 
 func main() {
 	// 读取配置
-	debug := flag.String("debug", "true", "The name of the configuration to load, default gofs")
-	name := flag.String("name", "gofs", "The name of the configuration to load, default gofs")
+	debug := flag.String("debug", "true", "Whether it is in debug mode, default true")
+	name := flag.String("name", "gofs", "App id, default gofs")
 	flag.Parse()
 
-	savePath, _ := filepath.Abs("./conf/modules")
+	savePath, _ := filepath.Abs("./conf/" + *name + "modules")
 	mloader, err := mloader.NewAsJSONRecorder(savePath)
 	if nil != err {
 		panic(err)

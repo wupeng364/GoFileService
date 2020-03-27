@@ -15,6 +15,13 @@ import (
 	"io"
 )
 
+// Reader 文件流Reader, 必须包含Close操作
+type Reader interface {
+	io.Reader
+	Close() error
+}
+
+// fmInterface 文件管理接口
 type fmInterface interface {
 	IsExist(relativePath string) (bool, error)
 	IsDir(relativePath string) (bool, error)
@@ -34,7 +41,7 @@ type fmInterface interface {
 	DoMove(src, dest string, repalce, ignore bool, callback MoveCallback) error
 	DoDelete(relativePath string) error
 
-	DoRead(relativePath string) (io.Reader, error)
+	DoRead(relativePath string) (Reader, error)
 	DoWrite(relativePath string, ioReader io.Reader) error
 	DoCopy(src, dst string, replace, ignore bool, callback CopyCallback) error
 

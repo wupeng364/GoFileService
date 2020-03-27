@@ -624,6 +624,7 @@ func (fsapi *FileAPI) OpenFile(w http.ResponseWriter, r *http.Request) {
 	}
 	//fsapi.fm.RemoveToken(token)
 	rd, err := fsapi.fm.DoRead(tokenObject.FilePath)
+	defer rd.Close()
 	if err != nil {
 		sendError(w, err)
 		return
@@ -641,6 +642,7 @@ func (fsapi *FileAPI) Download(w http.ResponseWriter, r *http.Request) {
 	}
 	fsapi.fm.RemoveToken(token)
 	rd, err := fsapi.fm.DoRead(tokenObject.FilePath)
+	defer rd.Close()
 	if err != nil {
 		sendError(w, err)
 		return

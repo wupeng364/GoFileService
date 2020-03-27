@@ -1,7 +1,0 @@
-English:
-1. Copy all the files in the bin directory of the parent directory to the package-source of this directory. Be careful not to delete the bin directory under the original package-source.
-2. Confirm that the compiled executable file name is gofs.exe
-
-Chinese:
-1. 将上级目录下bin目录中的所有文件复制到此目录的package-source. 注意不要删除原始package-source下的bin目录.
-2. 确认编译后的可执行文件名字是否为gofs.exe
