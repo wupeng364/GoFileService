@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"gutils/fstool"
+	"gutils/strtool"
 	"path"
 	"path/filepath"
 	"strconv"
@@ -248,7 +249,7 @@ func getRelativePath(mti mountNodes, absolute string) string {
 
 // getAbsoluteTempPath 获取该分区下的缓存目录
 func getAbsoluteTempPath(mountNode mountNodes) string {
-	return filepath.Clean(mountNode.mtAddr + "/" + tempDir + "/" + strconv.FormatInt(time.Now().UnixNano(), 10))
+	return filepath.Clean(mountNode.mtAddr + "/" + tempDir + "/" + strtool.GetUUID())
 }
 
 // getAbsoluteDeletingPath 获取一个放置删除文件的目录

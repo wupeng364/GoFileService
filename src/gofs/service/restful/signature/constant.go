@@ -19,7 +19,7 @@ const (
 	SingnatureTypeAsAPI SingnatureType = 1
 	// SingnatureTypeAsWeb 放置内存, 会过期
 	SingnatureTypeAsWeb SingnatureType = 0
-	// SingnatureTypeAsWebDestroyTime 默认15分钟销毁
+	// SingnatureTypeAsWebDestroyTime 默认30分钟销毁
 	SingnatureTypeAsWebDestroyTime = 30 * 60
 	// SingnatureTypeAsWebCacheType 标记
 	SingnatureTypeAsWebCacheType = "SingnatureType_Web"

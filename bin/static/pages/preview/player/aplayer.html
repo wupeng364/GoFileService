@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>音频播放</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <link rel="stylesheet" href='/lib/3party_library/aplayer/APlayer.min.css'/>
+  <script type="text/javascript" src="/lib/import-core.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/apis/preview.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/3party_library/aplayer/APlayer.min.js"></script>
+  <script type="text/javascript" src="/lib/3party_library/jsmediatags/jsmediatags.min.js"></script>
+</head>
+<style>
+  body{
+    background-repeat: no-repeat;
+    background-size: cover;
+    overflow-y: auto;
+  }
+  #aplayer{
+    max-width: 900px;
+    margin: auto;
+    height: 100%;
+    opacity: 0.8;
+  }
+  .aplayer-list{
+    overflow-y: auto !important;
+    height: calc(100% - 70px) !important;
+  }
+  .aplayer-list-hide{
+    /* height: 0px !important; */
+  }
+</style>
+<body>
+  <div id='aplayer'></div>
+</body>
+<script type="text/javascript">
+"use strict"
+function buildMusicList(token, datas){
+  let res = {
+    cindex: 0,
+    list: []
+  };
+  if(datas){
+    let cpath = datas.Path; 
+    if( datas.PeerDatas && datas.PeerDatas.length>0){
+      for (let i = 0; i < datas.PeerDatas.length; i++) {
+        let node = datas.PeerDatas[i];
+        if(!node.IsFile){
+          continue;
+        }
+        let px = node.Path.getSuffixed(false);
+        if( !$preview.isSupport('audio', px)){
+          continue;
+        }
+        if(node.Path == cpath){
+          res.cindex = res.list.length;
+        }
+        res.list.push({
+            name: node.Path.getName(false),
+            // artist: tags.artist,
+            url:  window.location.origin+'/preview/tokendatas?token='+token+'&type=stream&path='+encodeURIComponent(node.Path),
+            // cover: curl
+        });
+      }
+    }
+  }
+  return res;
+}
+// 获取封面
+function getCover( audio, cb ){
+  jsmediatags.read(audio.url, {
+    onSuccess: function(datas) {
+     // console.log(datas, datas.tags);
+      let tags = datas.tags;
+      
+      audio.artist = tags.artist?tags.artist:'';
+      audio.cover = 'data:'+tags.picture.format+';base64,'+arrayBufferToBase64(tags.picture.data);
+      if(cb){cb( );}
+    },
+    onError: function(err) {
+      // console.log(err);
+      if(cb){cb(err);}
+    }
+  });
+}
+// Buffer数据转base64字符
+function arrayBufferToBase64( buffer ) {
+  let binary = '';
+  let bytes = new Uint8Array( buffer );
+  let len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode( bytes[ i ] );
+  }
+  return window.btoa( binary );
+}
+// 
+window.onload = function(){
+  try{
+    let token = $utils.getQueryParam(window.location.search, 'token');
+    $preview.tokenDatas(token, 'list').then(function( datas ){
+      // 
+      datas = JSON.parse(datas);
+      let loaddingText = '正在加载: '+datas.Path.getName(false);
+      parent.onLoaded({title:loaddingText, loaddingText:loaddingText});
+      //
+      let mlist = buildMusicList(token, datas);
+      let ap = new APlayer({
+        audio: mlist.list,
+        listMaxHeight: 0,
+        container: document.getElementById('aplayer'),
+      });
+      ap.on('listshow', function(e){
+        document.getElementById('aplayer').style.height='100%';
+      });
+      ap.on('listhide', function(e){
+        document.getElementById('aplayer').style.height='66px';
+        console.log(document.getElementById('aplayer').style.height)
+      });
+      ap.on('listswitch', function(e){
+        let mitem = mlist.list[e.index];
+        parent.onLoaded({title:mitem.name, loadding:false});
+        if(mitem.cover){
+          document.body.style.backgroundImage  = "url('"+mitem.cover+"')";
+        }
+        if( !mitem['_cover_'] ){
+          getCover(mitem, function(){
+            mitem['_cover_'] = true;
+            ap.template.pic.style.backgroundImage = mitem.cover?"url('"+mitem.cover+"')":'';
+            ap.template.author.innerHTML = mitem.artist?mitem.artist:'';
+            document.body.style.backgroundImage = "url('"+mitem.cover+"')";
+          });
+        }
+      })
+      // 第一首歌
+      ap.list.switch(mlist.cindex);
+      ap.play();
+      // 刷新顶部title
+      parent.onLoaded({title:datas.Path.getName(false), loadding:false});
+    }).catch(function(err){
+      parent.onLoaded({title:'加载失败',loaddingText:err.toString()});
+    });
+  }catch(err){
+    parent.onLoaded({title:'加载失败',loaddingText:err.toString()});
+  }
+};
+</script>
+</html>

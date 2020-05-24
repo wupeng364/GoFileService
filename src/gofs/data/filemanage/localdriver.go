@@ -44,7 +44,7 @@ func (locl localDriver) IsFile(relativePath string) (bool, error) {
 	return fstool.IsFile(absPath), err
 }
 
-// GetDirList 获取路径列表, 返回绝对路径
+// GetDirList 获取路径列表, 返回相对路径
 func (locl localDriver) GetDirList(relativePath string) ([]string, error) {
 	absPath, relativePath, err := getAbsolutePath(locl.mountNode, relativePath)
 	if err != nil {
@@ -80,20 +80,6 @@ func (locl localDriver) GetFileSize(relativePath string) (int64, error) {
 	return fstool.GetFileSize(absPath)
 }
 
-// GetCreateTime GetCreateTime
-func (locl localDriver) GetCreateTime(relativePath string) (int64, error) {
-	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
-	if nil != err {
-		return -1, err
-	}
-	time, err := fstool.GetCreateTime(absPath)
-	if nil != err {
-		return -1, err
-	}
-
-	return time.UnixNano() / 1e6, nil
-}
-
 // GetModifyTime GetModifyTime
 func (locl localDriver) GetModifyTime(relativePath string) (int64, error) {
 	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
@@ -105,26 +91,6 @@ func (locl localDriver) GetModifyTime(relativePath string) (int64, error) {
 		return -1, err
 	}
 	return time.UnixNano() / 1e6, nil
-}
-
-// GetCreateUser GetCreateUser
-func (locl localDriver) GetCreateUser(relativePath string) (string, error) {
-	return "", nil
-}
-
-// GetModifyUser GetModifyUser
-func (locl localDriver) GetModifyUser(relativePath string) (string, error) {
-	return "", nil
-}
-
-// GetFileLatestVersion GetFileLatestVersion
-func (locl localDriver) GetFileLatestVersion(relativePath string) (string, error) {
-	return "", nil
-}
-
-// GetFileVersionList GetFileVersionList
-func (locl localDriver) GetFileVersionList(relativePath string) ([]string, error) {
-	return []string{}, nil
 }
 
 // DoMove 移动文件|夹
@@ -298,12 +264,20 @@ func (locl localDriver) DoCreat() (bool, error) {
 }
 
 // DoRead 读取文件, 需要手动关闭流
-func (locl localDriver) DoRead(relativePath string) (Reader, error) {
+func (locl localDriver) DoRead(relativePath string, offset int64) (Reader, error) {
 	absDst, _, gpErr := getAbsolutePath(locl.mountNode, relativePath)
 	if nil != gpErr {
 		return nil, gpErr
 	}
-	return fstool.OpenFile(absDst)
+	fs, err := fstool.OpenFile(absDst)
+	if nil != err {
+		return nil, err
+	}
+	_, err = fs.Seek(offset, io.SeekStart)
+	if nil != err {
+		return nil, err
+	}
+	return fs, nil
 }
 
 // DoWrite 写入文件， 先写入临时位置, 然后移动到正确位置
@@ -316,6 +290,7 @@ func (locl localDriver) DoWrite(relativePath string, ioReader io.Reader) error {
 		return gpErr
 	}
 	tempPath := getAbsoluteTempPath(locl.mountNode)
+	fmt.Println("tempPath", tempPath)
 	fs, wErr := fstool.GetWriter(tempPath)
 	if wErr != nil {
 		return wErr
@@ -339,21 +314,6 @@ func (locl localDriver) DoWrite(relativePath string, ioReader io.Reader) error {
 		return rmErr
 	}
 	return cpErr
-}
-
-// AskUploadToken 申请上传令牌
-func (locl localDriver) AskUploadToken(relativePath string) (string, error) {
-	return "", nil
-}
-
-// SaveTokenFile 保存上传令牌的内容
-func (locl localDriver) SaveTokenFile(token string, src io.Reader) bool {
-	return true
-}
-
-// SubmitToken 提交上传令牌
-func (locl localDriver) SubmitToken(token string, isCreateVer bool) (bool, error) {
-	return true, nil
 }
 
 // parseErrorString 去除具体位置信息

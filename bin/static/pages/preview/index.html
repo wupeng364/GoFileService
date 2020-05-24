@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <script type="text/javascript" src="/lib/import-core.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/apis/preview.js?v=2020.03.15"></script>
+</head>
+<style type="text/css">
+  @keyframes ani-demo-spin {
+      from { transform: rotate(0deg);}
+      50%  { transform: rotate(180deg);}
+      to   { transform: rotate(360deg);}
+  }
+</style>
+<body>
+  <div id='app' ref="app">
+    <iframe v-if='playerSrc&&playerSrc.length>0' :src='playerSrc' frameborder='0' scroll='no' id='player' name='player' style='width:100%;height:100%'></iframe>
+    <Spin v-show='loadding' fix>
+      <Icon type="ios-loading" size=20 style="animation: ani-demo-spin 1s linear infinite"></Icon>
+      <div>{{loaddingText}}</div>
+  </Spin>
+</body>
+<script type="text/javascript">
+  "use strict";
+  var V = new Vue({
+    data: function( ){
+      return {
+        loadding: true,
+        loaddingText: '加载中...',
+        title:'预览文件',
+        playerType:'',
+        playerSrc: '',
+      }
+    },
+    computed: {
+
+    },
+    methods: {
+      setTitle: function( ){
+        document.title = this.title?this.title:'查看文件'
+      },
+      // 打不开就下载
+      doDownload: function(token){
+        window.location.replace(window.location.pathname+'/preview/tokendatas?token='+token+'&type=stream')
+      }
+    },
+    created: function( ){
+      // audio video
+      let token = $utils.getQueryParam(window.location.search, 'token');
+      this.playerType = $utils.getQueryParam(window.location.search, 'type');
+      if(token && token.length>0 && this.playerType){
+        let pathname = window.location.pathname;
+        switch(this.playerType){
+          case "audio":
+            this.playerSrc = pathname+'/player/aplayer.html?token='+token;
+            this.title = '音频播放';
+          break;
+          case "video":
+            this.playerSrc = pathname+'/player/dplayer.html?token='+token;
+            this.title = '视频播放';
+          break;
+          default:
+            this.title = '暂不支持在线预览,正在下载文件';
+            this.doDownload( );
+            break;
+        }      
+      }else{
+        this.title = '似乎少了点什么东西呢~';
+        this.$Message.error("链接错误, 请重新打开");
+        setTimeout(function(){
+          window.close();
+        }, 2000)
+      }
+    },
+    watch:{
+      title: function(n, o){
+        this.setTitle();
+      }
+    }
+  }).$mount('#app');
+  // 加载结束
+  function onLoaded( opts ){
+    if(opts){
+      V.title = opts.title?opts.title:V.title;
+      V.loadding = undefined==opts.loadding?true:opts.loadding;
+      V.loaddingText = opts.loaddingText?opts.loaddingText:V.loaddingText;
+    }
+  }
+  setInterval(function(){
+    $preview.status();
+  }, 60000)
+</script>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>视频播放</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+  <link rel="stylesheet" href='/lib/3party_library/dplayer/DPlayer.min.css'/>
+  <script type="text/javascript" src="/lib/import-core.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/apis/preview.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/3party_library/dplayer/DPlayer.min.js"></script>
+</head>
+<body>
+  <div id='dplayer' style="height: 100%;width:100%;"></div>
+</body>
+<script type="text/javascript">
+"use strict"
+window.onload = function(){
+  try{
+    let token = $utils.getQueryParam(window.location.search, 'token');
+    $preview.tokenDatas(token, 'list').then(function( datas ){
+      // 
+      datas = JSON.parse(datas);
+      let loaddingText = '正在加载: '+datas.Path.getName(false);
+      parent.onLoaded({title:loaddingText, loaddingText:loaddingText});
+      // 开始播放
+      (new DPlayer({
+        container: document.getElementById('dplayer'),
+        video: {
+          url: window.location.origin+'/preview/tokendatas?token='+token+'&type=stream'
+            // pic: 'demo.png',
+            // thumbnails: 'thumbnails.jpg',
+        },
+      })).play( );
+      loaddingText = datas.Path.getName(false);
+      parent.onLoaded({title:loaddingText, loadding:false});
+    }).catch(function(err){
+      parent.onLoaded({title:'加载失败',loaddingText:err.toString()});
+    });
+  }catch(err){
+    parent.onLoaded({title:'加载失败',loaddingText:err.toString()});
+  }
+};
+
+</script>
+</html>

@@ -16,7 +16,7 @@
 		root.$userApi = factory();
 	}
 }(this, function ( ){
-	var api = { };
+	var api = { sync:{} };
 
 	/**
 	 * 登陆
@@ -41,6 +41,68 @@
 				}
 			});
 		});
+	};
+	// logout
+	api.logout = function( ){
+		return $apitools.apiPost("/userapi/logout")
+	};
+	// QueryUser
+	api.queryuser = function( userid ){
+		return $apitools.apiPost("/userapi/queryuser", {
+			"userid": userid
+		})
+	};
+	// UpdateUserName
+	api.updateUserName = function( userid, username){
+		return $apitools.apiPost("/userapi/updateusername", {
+			"userid": userid,
+			"username": username,
+		})
+	};
+	// UpdateUserPwd
+	api.updateUserPwd = function( userid, userpwd){
+		return $apitools.apiPost("/userapi/updateuserpwd", {
+			"userid": userid,
+			"userpwd": userpwd,
+		})
+	};
+	// ListAllUsers
+	api.listAllUsers = function( userid, userpwd){
+		return $apitools.apiPost("/userapi/listallusers", { })
+	};
+	// AddUser
+	api.addUser = function( userid, username, userpwd){
+		return $apitools.apiPost("/userapi/adduser", {
+			'userid': userid,
+			'username': username,
+			'userpwd': userpwd?userpwd:'',
+		 })
+	};
+	// DelUser
+	api.delUser = function( userid){
+		return $apitools.apiPost("/userapi/deluser", {
+			'userid': userid,
+		 })
+	};
+	// UpdateUserName
+	api.sync.updateUserName = function( userid, username){
+		return $apitools.apiPostSync("/userapi/updateusername", {
+			"userid": userid,
+			"username": username,
+		})
+	};
+	// UpdateUserPwd
+	api.sync.updateUserPwd = function( userid, userpwd){
+		return $apitools.apiPostSync("/userapi/updateuserpwd", {
+			"userid": userid,
+			"userpwd": userpwd,
+		})
+	};
+	// DelUser
+	api.sync.delUser = function( userid){
+		return $apitools.apiPostSync("/userapi/deluser", {
+			'userid': userid,
+		 })
 	};
 	return api;
 }));

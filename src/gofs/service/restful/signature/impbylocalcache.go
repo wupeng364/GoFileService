@@ -12,7 +12,6 @@
 package signature
 
 import (
-	"fmt"
 	"gutils/strtool"
 	"gutils/tokentool"
 )
@@ -55,9 +54,9 @@ func (signature *impByLocalCache) GenerateAccessToken(userID string, singnatureT
 	return accessToken, nil
 }
 
-// SignatureVerification 验证签名是否有效, 通过accessKey查找SecretKey然后校验参数
+// VerificationSignature 验证签名是否有效, 通过accessKey查找SecretKey然后校验参数
 // Todd 可以尝试绑定IP
-func (signature *impByLocalCache) SignatureVerification(accessKey, sign string, requestparameter string) bool {
+func (signature *impByLocalCache) VerificationSignature(accessKey, sign string, requestparameter string) bool {
 	if len(accessKey) == 0 || len(sign) == 0 {
 		return false
 	}
@@ -67,7 +66,7 @@ func (signature *impByLocalCache) SignatureVerification(accessKey, sign string, 
 	}
 	accessBody := tokenBody.(*AccessBody)
 	calcSign := strtool.GetMD5(requestparameter + accessBody.SecretKey)
-	fmt.Println("SignatureVerification: ", accessKey, requestparameter+accessBody.SecretKey, calcSign, sign)
+	// fmt.Println("VerificationSignature: ", accessKey, requestparameter+accessBody.SecretKey, calcSign, sign)
 	if calcSign == sign {
 		signature.cache.RefreshToken(accessKey) // 刷新过期时间
 		return true
@@ -75,8 +74,8 @@ func (signature *impByLocalCache) SignatureVerification(accessKey, sign string, 
 	return false
 }
 
-// SignatureDestroy 销毁签名, 使其无效
-func (signature *impByLocalCache) SignatureDestroy(accessKey string) error {
+// DestroySignature 销毁签名, 使其无效
+func (signature *impByLocalCache) DestroySignature(accessKey string) error {
 	signature.cache.DestroyToken(accessKey)
 	return nil
 }

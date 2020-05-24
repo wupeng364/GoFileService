@@ -10,6 +10,7 @@ import (
 	"gofs/data/usermanage"
 	"gofs/extend/htmlpage"
 	"gofs/service/restful/fileapi"
+	"gofs/service/restful/preview"
 	"gofs/service/restful/signature"
 	"gofs/service/restful/userapi"
 	"gutils/mloader"
@@ -35,7 +36,7 @@ func main() {
 	// 加载模块
 	mloader.Loads(new(conf.AppConf), new(httpserver.HTTPServer), new(sqlite.SqliteConn))
 	mloader.Loads(new(filemanage.FileManager), new(usermanage.UserManager))
-	mloader.Loads(new(signature.Signature), new(userapi.UserAPI), new(fileapi.FileAPI))
+	mloader.Loads(new(signature.Signature), new(userapi.UserAPI), new(fileapi.FileAPI), new(preview.Preview))
 	mloader.Loads(new(htmlpage.HTMLPage))
 	// 启动服务
 	res, err := mloader.Invoke("HTTPServer", "DoStartServer", &http.Server{

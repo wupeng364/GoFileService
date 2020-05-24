@@ -16,9 +16,9 @@ type signature interface {
 	// 生成访问令牌, 返回AccessToken
 	GenerateAccessToken(userID string, singnatureType SingnatureType) (AccessToken, error)
 	// 验证签名是否有效, 通过accessKey查找SecretKey, 通过MD5(SecretKey+requestparameter)==sign校验参数
-	SignatureVerification(accessKey, sign string, requestparameter string) bool
+	VerificationSignature(accessKey, sign string, requestparameter string) bool
 	// 销毁签名, 使其无效
-	SignatureDestroy(accessKey string) error
+	DestroySignature(accessKey string) error
 	// 获取用户ID
 	GetUserID(accessKey string) string
 	// 设置属性到session里面, 会话过期自动删除

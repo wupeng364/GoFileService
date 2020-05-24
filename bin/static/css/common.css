@@ -14,6 +14,87 @@ html,body{
 li{
 	list-style:none;
 }
+/* float */
+.fl{float: left;}
+.fr{float: right;}
+/* text */
+.t_not_select{user-select: none;}
+.t_center{text-align: center;}
+.t_eps{overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.cs_p{cursor: pointer;}
+/* font-size */
+.fw_bold{font-weight: bold;}
+.fs_12{font-size: 12px !important;}
+.fs_14{font-size: 14px !important;}
+.fs_16{font-size: 16px !important;}
+.fs_18{font-size: 18px !important;}
+.fs_20{font-size: 20px !important;}
+.fs_22{font-size: 22px !important;}
+.fs_24{font-size: 24px !important;}
+.fs_26{font-size: 26px !important;}
+.fs_28{font-size: 28px !important;}
+.fs_30{font-size: 30px !important;}
+.fs_32{font-size: 32px !important;}
+.fs_34{font-size: 34px !important;}
+.fs_36{font-size: 36px !important;}
+/* diplay */
+.d_block{display: block;}
+.d_none{display: none;}
+.ov_hidden{overflow:hidden;}
+/* padding */
+.pd_0_0{padding: 0px;}
+/* padding-top */
+.pd_t_0{padding-top: 0px;}
+.pd_t_5{padding-top: 5px;}
+.pd_t_15{padding-top: 15px;}
+/* padding-bottom */
+.pd_b_0{padding-bottom: 0px;}
+.pd_b_5{padding-bottom:5px}
+.pd_b_10{padding-bottom:10px}
+.pd_b_15{padding-bottom:15px}
+/* padding-left */
+.pd_l_10{padding-left:10px}
+.pd_l_15{padding-left:15px}
+/* padding-right */
+.pd_r_10{padding-right:10px}
+.pd_r_15{padding-right:15px}
+/* padding:0 xx */
+.pd_0_5{padding: 0px 5px}
+.pd_0_10{padding: 0px 10px}
+.pd_0_15{padding: 0px 15px}
+.pd_0_25{padding: 0px 25px}
+/* padding:xx 0*/
+.pd_5_0{padding: 5px 0px}
+.pd_10_0{padding: 10px 0px}
+.pd_15_0{padding: 15px 0px}
+/* padding: xx xx */
+.pd_10_10{padding: 10px 10px}
+
+/* margin: 0 xx */
+.mg_0_0{margin: 0px;}
+.mg_0_auto{margin: 0px auto;}
+/* margin-top */
+.mg_t_0{margin-top: 0px;}
+.mg_t_5{margin-top: 5px;}
+/* margin-bottom */
+.mg_b_0{margin-bottom: 0px;}
+.mg_b_5{margin-bottom:5px}
+.mg_b_10{margin-bottom:10px}
+/* margin-left */
+.mg_l_0{margin-left: 0px;}
+.mg_l_5{margin-left: 5px;}
+.mg_l_10{margin-left: 10px;}
+/* margin-right */
+.mg_r_0{margin-right: 0px}
+.mg_r_5{margin-right: 5px}
+.mg_r_10{margin-right:10px}
+
+/* vertical-align */
+.va_b{vertical-align: bottom;}
+.va_m{vertical-align: middle;}
+/* before & after */
+.before_unset:before{ content: unset !important; }
+.after_unset:after{ content: unset !important; }
 
 
 /*****/

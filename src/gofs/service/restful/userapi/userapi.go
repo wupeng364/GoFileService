@@ -13,6 +13,7 @@ package userapi
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gofs/comm/httpserver"
 	"gofs/data/usermanage"
@@ -68,6 +69,7 @@ func (userapi *UserAPI) RoutList() httpserver.StructRegistrar {
 			userapi.UpdateUserName,
 			userapi.UpdateUserPwd,
 			userapi.CheckPwd,
+			userapi.Logout,
 		},
 	}
 }
@@ -75,7 +77,7 @@ func (userapi *UserAPI) RoutList() httpserver.StructRegistrar {
 // ListAllUsers 列出所有用户数据, 无分页
 func (userapi *UserAPI) ListAllUsers(w http.ResponseWriter, r *http.Request) {
 	if users, err := userapi.um.ListAllUsers(); nil == err {
-		if tb, err := json.Marshal(users); nil == err {
+		if tb, err := json.Marshal(*users); nil == err {
 			httpserver.SendSuccess(w, string(tb))
 		} else {
 			httpserver.SendError(w, err)
@@ -94,7 +96,7 @@ func (userapi *UserAPI) QueryUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if user, err := userapi.um.QueryUser(userID); nil == err {
-		if tb, err := json.Marshal(user); nil == err {
+		if tb, err := json.Marshal(*user); nil == err {
 			httpserver.SendSuccess(w, string(tb))
 		} else {
 			httpserver.SendError(w, err)
@@ -107,8 +109,8 @@ func (userapi *UserAPI) QueryUser(w http.ResponseWriter, r *http.Request) {
 // AddUser 添加用户
 func (userapi *UserAPI) AddUser(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("userid")
-	userName := r.FormValue("userName")
-	userPwd := r.FormValue("userPwd")
+	userName := r.FormValue("username")
+	userPwd := r.FormValue("userpwd")
 	if len(userID) == 0 {
 		httpserver.SendError(w, ErrorUserIDIsNil)
 		return
@@ -121,6 +123,7 @@ func (userapi *UserAPI) AddUser(w http.ResponseWriter, r *http.Request) {
 		UserID:   userID,
 		UserName: userName,
 		UserPWD:  userPwd,
+		UserType: usermanage.NormalRole,
 	}
 
 	if err := userapi.um.AddUser(&uinfo); nil == err {
@@ -133,7 +136,7 @@ func (userapi *UserAPI) AddUser(w http.ResponseWriter, r *http.Request) {
 // UpdateUserPwd 修改用户密码
 func (userapi *UserAPI) UpdateUserPwd(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("userid")
-	userPwd := r.FormValue("userPwd")
+	userPwd := r.FormValue("userpwd")
 	if len(userID) == 0 {
 		httpserver.SendError(w, ErrorUserIDIsNil)
 		return
@@ -148,7 +151,7 @@ func (userapi *UserAPI) UpdateUserPwd(w http.ResponseWriter, r *http.Request) {
 // UpdateUserName 修改用户昵称
 func (userapi *UserAPI) UpdateUserName(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("userid")
-	userName := r.FormValue("userName")
+	userName := r.FormValue("username")
 	if len(userID) == 0 {
 		httpserver.SendError(w, ErrorUserIDIsNil)
 		return
@@ -170,6 +173,25 @@ func (userapi *UserAPI) DelUser(w http.ResponseWriter, r *http.Request) {
 	if len(userID) == 0 {
 		httpserver.SendError(w, ErrorUserIDIsNil)
 		return
+	}
+	users, _ := userapi.um.ListAllUsers()
+	if nil == users || len(*users) == 1 {
+		httpserver.SendError(w, errors.New("Cannot delete the last user"))
+		return
+	}
+	{
+		count := 0
+		lauid := ""
+		for _, val := range *users {
+			if val.UserType == usermanage.AdminRole {
+				count++
+				lauid = val.UserID
+			}
+		}
+		if count <= 1 && (userID == lauid || len(lauid) == 0) {
+			httpserver.SendError(w, errors.New("Cannot delete the last admin user"))
+			return
+		}
 	}
 	if err := userapi.um.DelUser(userID); nil == err {
 		httpserver.SendSuccess(w, "")
@@ -197,4 +219,15 @@ func (userapi *UserAPI) CheckPwd(w http.ResponseWriter, r *http.Request) {
 	} else {
 		httpserver.SendError(w, ErrorPwdIsError)
 	}
+}
+
+//Logout 注销会话
+func (userapi *UserAPI) Logout(w http.ResponseWriter, r *http.Request) {
+
+	err := userapi.sg.DestroySignature4HTTP(r)
+	if nil != err {
+		httpserver.SendError(w, err)
+		return
+	}
+	httpserver.SendSuccess(w, "")
 }

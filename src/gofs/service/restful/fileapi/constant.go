@@ -16,7 +16,7 @@ import (
 const (
 	baseurl = "/fsapi"
 	// headerFormNameFile 用头信息标记Form表单中文件的FormName
-	headerFormNameFile = "Formname-File"
+	headerFormNameFile = "FormName-File"
 	// defaultFormNameFile 默认使用这个作为Form表单中文件的FormName
 	defaultFormNameFile = "file"
 	// defaultFormNameFspath 默认使用这个作为Form表单中文件保存位置的FormName
@@ -37,7 +37,7 @@ type errorOperationStruct struct {
 type tokenTypeStruct struct {
 	copyDir  string
 	moveDir  string
-	download string
+	transfer string
 }
 
 // FileBatchOperationTokenObject 复制文件Token保存对象
@@ -74,7 +74,7 @@ var ErrorOperation = &errorOperationStruct{
 var TokenType = &tokenTypeStruct{
 	copyDir:  "copy_dir",
 	moveDir:  "move_dir",
-	download: "download",
+	transfer: "transfer",
 }
 
 // ErrorDiscontinue ErrorDiscontinue

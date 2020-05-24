@@ -68,7 +68,7 @@ func (sqlti *impBySqlite) InitTables() error {
 		ts.Rollback()
 		return err
 	}
-	_, err = stmt.Exec("admin", "管理员", AdminRole, strtool.GetMD5(""), time.Now())
+	_, err = stmt.Exec("admin", "系统管理员", AdminRole, strtool.GetMD5(""), time.Now())
 	if err != nil {
 		ts.Rollback()
 		return err
@@ -120,7 +120,7 @@ func (sqlti *impBySqlite) QueryUser(userID string) (*UserInfo, error) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT userid,username,usertype,cttime FROM users where userid=" + userID)
+	rows, err := db.Query("SELECT userid,username,usertype,cttime FROM users where userid='" + userID + "'")
 	defer rows.Close()
 	if err != nil {
 		return nil, err
@@ -312,7 +312,7 @@ func (sqlti *impBySqlite) UpdatePWD(user *UserInfo) error {
 	}
 
 	//
-	stmt, err := ts.Prepare("UPDATE users SET uuserpwd=? WHERE userid=?")
+	stmt, err := ts.Prepare("UPDATE users SET userpwd=? WHERE userid=?")
 	if err != nil {
 		ts.Rollback()
 		return err

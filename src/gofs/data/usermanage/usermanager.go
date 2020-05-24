@@ -24,7 +24,7 @@ type UserManager struct {
 func (umg *UserManager) ModuleOpts() mloader.Opts {
 	return mloader.Opts{
 		Name:        "UserManager",
-		Version:     1.0,
+		Version:     1.1,
 		Description: "用户管理模块",
 		OnReady: func(mctx *mloader.Loader) {
 			umg.mctx = mctx
@@ -37,6 +37,9 @@ func (umg *UserManager) ModuleOpts() mloader.Opts {
 			if nil != err {
 				panic(err)
 			}
+		},
+		OnUpdate: func(hv float64) {
+			doUpdateModule(hv, umg)
 		},
 	}
 }

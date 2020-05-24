@@ -1,8 +1,8 @@
 [Setup]
 AppName=File Service
 AppVerName=GoFileService
-VersionInfoVersion=1.1.2.00327
-VersionInfoTextVersion=2020-03-27
+VersionInfoVersion=1.2.0.00524    
+VersionInfoTextVersion=2020-05-24
 LicenseFile=package-info\license.txt
 DefaultDirName={code:getInstallDir}
 DefaultGroupName=GoFileService

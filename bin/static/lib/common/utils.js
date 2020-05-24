@@ -182,64 +182,6 @@
 				}
 			})
 		},
-		// 获取今天凌晨
-		getTerdayStart: function( ){
-			var date = new Date( );
-			date.setHours( 0, 0, 0, 0 );
-			return date;
-		},
-		// 获取昨天日期
-		getYesterday: function( ){
-			var date = new Date( );
-			date.setHours( 0, 0, 0, 0 );
-			date.setDate( date.getDate( ) - 1 );
-			return date;
-		},
-		// 获取本周的第一天
-		getCurrentWeekFirst: function( ){
-			var date = new Date( );
-			date.setHours( 0, 0, 0, 0 );
-			date.setDate( date.getDate( ) - (date.getDay( )||7)+1 );
-			return date;
-		},
-		// 获取本周的最后一天
-		getCurrentWeekLast: function( ){
-			var date = new Date( );
-			date.setHours( 0, 0, 0, 0 );
-			date.setDate( date.getDate( ) - (date.getDay( )||7)+1 );
-			date.setDate( date.getDate( )+6 );
-			return date;
-		},
-		// 获取当前月的第一天
-		getCurrentMonthFirst: function( ){
-			var date = new Date( );
-			date.setDate(1);
-			date.setHours(0, 0, 0, 0);
-			return date;
-		},
-		// 获取当前月的最后一天
-		getCurrentMonthLast: function( ){
-			var date = new Date( );
-			date.setMonth( date.getMonth( ) + 1 );
-			date.setDate(0);
-			date.setHours(23, 59, 59, 0);
-			return date;
-		},
-		// 获取上个月的第一天
-		getAfterMonthFirst: function( ){
-			var date = new Date( );
-			date.setMonth( date.getMonth( ) - 1 );
-			date.setDate(1);
-			date.setHours(0, 0, 0, 0);
-			return date;
-		},
-		// 获取上个月的最后一天
-		getAfterMonthLast: function( ){
-			var date = new Date( );
-			date.setDate(0);
-			date.setHours(23, 59, 59, 0);
-			return date;
-		},
 	});
 
 	// HTML | DOM操作
@@ -338,7 +280,7 @@
 			opt.xhr.open(opt.method, opt.uri, opt.async);
 			opt.xhr.onreadystatechange = function( ){
 				if(opt.onreadystatechange){
-					opt.onreadystatechange( opt.xhr, opt );
+					return opt.onreadystatechange( opt.xhr, opt );
 				}
 			};
 			{
@@ -355,10 +297,11 @@
 				opt.xhr.setRequestHeader(key, val);
 			};
 			opt.do = function( callback ){
-				if(callback){
+				if(opt.async && callback){
 					opt.onreadystatechange = callback;
 				}
 				opt.xhr.send(opt.xhrPayload);
+				return opt.async||!callback?opt.xhr:callback(opt.xhr, opt);
 			};
 			return opt;
 		},

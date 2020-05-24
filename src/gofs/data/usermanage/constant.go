@@ -16,9 +16,9 @@ import (
 
 const (
 	// AdminRole 管理员角色标识
-	AdminRole = "0"
+	AdminRole = 1
 	// NormalRole 普通用户角色标识
-	NormalRole = "1"
+	NormalRole = 0
 )
 
 // ErrorConnIsNil 空连接

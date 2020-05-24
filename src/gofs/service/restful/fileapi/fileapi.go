@@ -91,7 +91,6 @@ func (fsapi *FileAPI) RoutList() httpserver.StructRegistrar {
 			fsapi.BatchOperationTokenStauts,
 			fsapi.List,
 			fsapi.Del,
-			fsapi.DelVer,
 			fsapi.ReName,
 			fsapi.NewFolder,
 			fsapi.MoveAsync,
@@ -105,16 +104,20 @@ func (fsapi *FileAPI) RoutList() httpserver.StructRegistrar {
 
 // TransferToken 传输令牌申请
 func (fsapi *FileAPI) TransferToken(w http.ResponseWriter, r *http.Request) {
-	qpath := r.FormValue("path")
+	qpath := strtool.Parse2UnixPath(r.FormValue("path"))
 	if len(qpath) == 0 {
-		sendError(w, ErrorOprationFailed)
+		httpserver.SendError(w, ErrorOprationFailed)
 		return
 	}
-	if !fsapi.fm.IsFile(qpath) {
-		sendError(w, ErrorFileNotExist)
+	if strings.Index(qpath, "../") > -1 {
+		httpserver.SendError(w, ErrorFileNotExist)
 		return
 	}
-	sendSuccess(w, fsapi.fm.AskToken(TokenType.download, &FileTransferToken{
+	// if !fsapi.fm.IsFile(qpath) {
+	// 	httpserver.SendError(w, ErrorFileNotExist)
+	// 	return
+	// }
+	httpserver.SendSuccess(w, fsapi.fm.AskToken(TokenType.transfer, &FileTransferToken{
 		FilePath: qpath,
 	}))
 }
@@ -126,19 +129,19 @@ func (fsapi *FileAPI) BatchOperationTokenStauts(w http.ResponseWriter, r *http.R
 	tokenBody, tokenErr := getFileBatchOperationTokenObject(fsapi, qToken)
 	// fmt.Println("Token: ", r.Method, qToken, tokenBody)
 	if nil == tokenBody || nil != tokenErr {
-		sendError(w, ErrorOprationExpires)
+		httpserver.SendError(w, ErrorOprationExpires)
 		return
 	}
 	// Get 用于获取令牌信息
 	if r.Method == "GET" {
 		bt, _ := json.Marshal(tokenBody)
-		sendSuccess(w, string(bt))
+		httpserver.SendSuccess(w, string(bt))
 
 		// POST 用于操作|中断
 	} else if r.Method == "POST" {
 		qOperation := r.FormValue("operation")
 		if len(qOperation) == 0 {
-			sendError(w, ErrorOprationFailed)
+			httpserver.SendError(w, ErrorOprationFailed)
 		} else {
 			switch qOperation {
 			// 忽略单个 错误
@@ -169,10 +172,10 @@ func (fsapi *FileAPI) BatchOperationTokenStauts(w http.ResponseWriter, r *http.R
 				// fsapi.fm.RemoveToken(qToken)
 				break
 			default:
-				sendError(w, ErrorOprationFailed)
+				httpserver.SendError(w, ErrorOprationFailed)
 				return
 			}
-			sendSuccess(w, "")
+			httpserver.SendSuccess(w, "")
 		}
 	}
 }
@@ -184,7 +187,7 @@ func (fsapi *FileAPI) List(w http.ResponseWriter, r *http.Request) {
 	qAsc := r.FormValue("asc")
 	// fmt.Println(r.URL, r.Body, qpath)
 	if len(qpath) == 0 {
-		sendError(w, errors.New("'Path' parameter not found"))
+		httpserver.SendError(w, errors.New("'Path' parameter not found"))
 		return
 	}
 	if len(qAsc) == 0 {
@@ -192,7 +195,7 @@ func (fsapi *FileAPI) List(w http.ResponseWriter, r *http.Request) {
 	}
 	res, err := fsapi.fm.GetDirListInfo(qpath)
 	if err != nil {
-		sendError(w, err)
+		httpserver.SendError(w, err)
 		return
 	}
 	json, err := json.Marshal(filemanage.FileListSorter{
@@ -200,27 +203,27 @@ func (fsapi *FileAPI) List(w http.ResponseWriter, r *http.Request) {
 		SortField: qSort,
 	}.Sort(res))
 	if err != nil {
-		sendError(w, err)
+		httpserver.SendError(w, err)
 	}
-	w.Write([]byte(json))
+	httpserver.SendSuccess(w, string(json))
 }
 
 // Del 批量|单个删除文件|文件夹
 func (fsapi *FileAPI) Del(w http.ResponseWriter, r *http.Request) {
 	qpath := r.FormValue("path")
 	if len(qpath) == 0 {
-		sendError(w, errors.New("'Path' parameter not found"))
+		httpserver.SendError(w, errors.New("'Path' parameter not found"))
 		return
 	}
 	if !fsapi.fm.IsExist(qpath) {
-		sendError(w, ErrorFileNotExist)
+		httpserver.SendError(w, ErrorFileNotExist)
 		return
 	}
 	err := fsapi.fm.DoDelete(qpath)
 	if nil == err {
-		sendSuccess(w, "")
+		httpserver.SendSuccess(w, "")
 	} else {
-		sendError(w, err)
+		httpserver.SendError(w, err)
 	}
 }
 
@@ -231,11 +234,11 @@ func (fsapi *FileAPI) MoveAsync(w http.ResponseWriter, r *http.Request) {
 	qReplace := strtool.String2Bool(r.FormValue("replace"))
 	qIgnore := strtool.String2Bool(r.FormValue("ignore"))
 	if len(qSrcPath) == 0 {
-		sendError(w, errors.New("'srcPath' parameter not found"))
+		httpserver.SendError(w, errors.New("'srcPath' parameter not found"))
 		return
 	}
 	if len(qDstPath) == 0 {
-		sendError(w, errors.New("'dstPath' parameter not found"))
+		httpserver.SendError(w, errors.New("'dstPath' parameter not found"))
 		return
 	}
 	// 异步处理, 返回一个Token用于查询进度
@@ -363,7 +366,7 @@ func (fsapi *FileAPI) MoveAsync(w http.ResponseWriter, r *http.Request) {
 			// fmt.Println("copyDirErr: ", copyDirErr)
 		}
 	}(token)
-	sendSuccess(w, token)
+	httpserver.SendSuccess(w, token)
 }
 
 // CopyAsync 拷贝文件|文件夹 - 异步操作, 返回Token用于查询进度
@@ -373,11 +376,11 @@ func (fsapi *FileAPI) CopyAsync(w http.ResponseWriter, r *http.Request) {
 	qReplace := strtool.String2Bool(r.FormValue("replace"))
 	qIgnore := strtool.String2Bool(r.FormValue("ignore"))
 	if len(qSrcPath) == 0 {
-		sendError(w, errors.New("'qSrcPath' parameter not found"))
+		httpserver.SendError(w, errors.New("'qSrcPath' parameter not found"))
 		return
 	}
 	if len(qDstPath) == 0 {
-		sendError(w, errors.New("'qDstPath' parameter not found"))
+		httpserver.SendError(w, errors.New("'qDstPath' parameter not found"))
 		return
 	}
 	// 异步处理, 返回一个Token用于查询进度
@@ -504,12 +507,7 @@ func (fsapi *FileAPI) CopyAsync(w http.ResponseWriter, r *http.Request) {
 			// fmt.Println("copyDirErr: ", copyDirErr)
 		}
 	}(token)
-	sendSuccess(w, token)
-}
-
-// DelVer 删除版本
-func (fsapi *FileAPI) DelVer(w http.ResponseWriter, r *http.Request) {
-
+	httpserver.SendSuccess(w, token)
 }
 
 // ReName 重命名
@@ -517,18 +515,18 @@ func (fsapi *FileAPI) ReName(w http.ResponseWriter, r *http.Request) {
 	qSrcPath := r.FormValue("path")
 	qName := r.FormValue("name")
 	if !fsapi.fm.IsExist(qSrcPath) {
-		sendError(w, ErrorFileNotExist)
+		httpserver.SendError(w, ErrorFileNotExist)
 		return
 	}
 	if len(qName) == 0 {
-		sendError(w, ErrorNewNameIsEmpty)
+		httpserver.SendError(w, ErrorNewNameIsEmpty)
 		return
 	}
 	rnmErr := fsapi.fm.DoRename(qSrcPath, qName)
 	if nil == rnmErr {
-		sendSuccess(w, "")
+		httpserver.SendSuccess(w, "")
 	} else {
-		sendError(w, rnmErr)
+		httpserver.SendError(w, rnmErr)
 	}
 }
 
@@ -537,14 +535,14 @@ func (fsapi *FileAPI) NewFolder(w http.ResponseWriter, r *http.Request) {
 	qSrcPath := r.FormValue("path")
 	qSrcPath = strtool.Parse2UnixPath(qSrcPath)
 	if !fsapi.fm.IsExist(strtool.GetPathParent(qSrcPath)) {
-		sendError(w, ErrorParentFolderNotExist)
+		httpserver.SendError(w, ErrorParentFolderNotExist)
 		return
 	}
 	rnmErr := fsapi.fm.DoNewFolder(qSrcPath)
 	if nil == rnmErr {
-		sendSuccess(w, "")
+		httpserver.SendSuccess(w, "")
 	} else {
-		sendError(w, rnmErr)
+		httpserver.SendError(w, rnmErr)
 	}
 }
 
@@ -561,53 +559,54 @@ func (fsapi *FileAPI) NameSearch(w http.ResponseWriter, r *http.Request) {
 // Upload 文件上传, 支持Form和Body上传方式
 // 参数: Header("Save-Path", ["Formname-File"])
 func (fsapi *FileAPI) Upload(w http.ResponseWriter, r *http.Request) {
-	mr, err := r.MultipartReader()
-	if err == nil {
-		pName := r.Header.Get(headerFormNameFile)
-		if len(pName) == 0 {
-			pName = defaultFormNameFile
-		}
-		dst := ""
-		for {
-			p, err := mr.NextPart()
-			if nil == p || err == io.EOF {
-				break
-			}
-			// 文件保存位置
-			if p.FormName() == defaultFormNameFspath {
-				dst = strtool.ReadAsString(p)
-			}
-			if p.FormName() != pName {
-				continue
-			}
-			if len(dst) == 0 {
-				sendError(w, errors.New("Cannot get header: Save-Path"))
-				return
-			}
-			err = fsapi.fm.DoWrite(dst, p)
-			if nil != err {
-				sendError(w, err)
-			} else {
-				sendSuccess(w, "")
-			}
-			break
-		}
+	token := strtool.GetPathName(r.URL.Path)
+	if len(token) > 0 {
+		tkobj, _ := getFileTransferTokenObject(fsapi, token)
+		if tkobj != nil && len(tkobj.FilePath) > 0 {
+			mr, err := r.MultipartReader()
+			if err == nil {
+				pName := r.Header.Get(headerFormNameFile)
+				if len(pName) == 0 {
+					pName = defaultFormNameFile
+				}
+				hasfile := false
+				for {
+					p, err := mr.NextPart()
+					if nil == p || err == io.EOF {
+						break
+					}
+					if p.FormName() != pName {
+						continue
+					}
+					hasfile = true
+					err = fsapi.fm.DoWrite(tkobj.FilePath, p)
+					if nil != err {
+						httpserver.SendError(w, err)
+					} else {
+						httpserver.SendSuccess(w, "")
+					}
+					break
+				}
+				if !hasfile {
+					httpserver.SendError(w, errors.New("File not found from the form"))
+					return
+				}
 
-	} else if nil != err && err == http.ErrNotMultipart {
-		dst := r.Header.Get(defaultFormNameFspath)
-		if len(dst) == 0 {
-			sendError(w, errors.New("Cannot get header: Save-Path"))
-			return
+			} else if nil != err && err == http.ErrNotMultipart {
+				err := fsapi.fm.DoWrite(tkobj.FilePath, r.Body)
+				if nil != err {
+					httpserver.SendError(w, err)
+				} else {
+					httpserver.SendSuccess(w, "")
+				}
+			} else {
+				httpserver.SendError(w, err)
+			}
 		}
-		err := fsapi.fm.DoWrite(dst, r.Body)
-		if nil != err {
-			sendError(w, err)
-		} else {
-			sendSuccess(w, "")
-		}
-	} else {
-		sendError(w, err)
+		// 使token无效
+		fsapi.fm.RemoveToken(token)
 	}
+	httpserver.SendError(w, ErrorOprationExpires)
 }
 
 // OpenFile 打开
@@ -619,14 +618,14 @@ func (fsapi *FileAPI) OpenFile(w http.ResponseWriter, r *http.Request) {
 	}
 	tokenObject, err := getFileTransferTokenObject(fsapi, token)
 	if nil != err || nil == tokenObject {
-		sendError(w, ErrorOprationExpires)
+		httpserver.SendError(w, ErrorOprationExpires)
 		return
 	}
 	//fsapi.fm.RemoveToken(token)
-	rd, err := fsapi.fm.DoRead(tokenObject.FilePath)
+	rd, err := fsapi.fm.DoRead(tokenObject.FilePath, 0)
 	defer rd.Close()
 	if err != nil {
-		sendError(w, err)
+		httpserver.SendError(w, err)
 		return
 	}
 	io.Copy(w, rd)
@@ -637,19 +636,19 @@ func (fsapi *FileAPI) Download(w http.ResponseWriter, r *http.Request) {
 	token := strtool.GetPathName(r.URL.Path)
 	tokenObject, err := getFileTransferTokenObject(fsapi, token)
 	if nil != err || nil == tokenObject {
-		sendError(w, ErrorOprationExpires)
+		httpserver.SendError(w, ErrorOprationExpires)
 		return
 	}
 	fsapi.fm.RemoveToken(token)
-	rd, err := fsapi.fm.DoRead(tokenObject.FilePath)
+	rd, err := fsapi.fm.DoRead(tokenObject.FilePath, 0)
 	defer rd.Close()
 	if err != nil {
-		sendError(w, err)
+		httpserver.SendError(w, err)
 		return
 	}
 	fileSize, err := fsapi.fm.GetFileSize(tokenObject.FilePath)
 	if nil != err {
-		sendError(w, err)
+		httpserver.SendError(w, err)
 		return
 	}
 	fileName := strtool.GetPathName(tokenObject.FilePath)
@@ -659,39 +658,12 @@ func (fsapi *FileAPI) Download(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, rd)
 }
 
-// FsAPIResponse 响应结构
-type FsAPIResponse struct {
-	Code int
-	Data string
-}
-
-func sendSuccess(w http.ResponseWriter, msg string) {
-	setJSON(w)
-	w.WriteHeader(http.StatusOK)
-	w.Write(parseJSON(http.StatusOK, msg))
-}
-func sendError(w http.ResponseWriter, err error) {
-	setJSON(w)
-	w.WriteHeader(http.StatusBadRequest)
-	w.Write(parseJSON(http.StatusBadRequest, err.Error()))
-}
-func parseJSON(code int, str string) []byte {
-	bt, err := json.Marshal(FsAPIResponse{Code: code, Data: str})
-	if nil != err {
-		fmt.Println("parseJSON: ", err)
-	}
-	return bt
-}
-func setJSON(w http.ResponseWriter) {
-	w.Header().Set("Content-type", "application/json;charset=utf-8")
-}
-
 // getFileBatchOperationTokenObject 获取批文件量操作Token对象
 func getFileBatchOperationTokenObject(fsapi *FileAPI, token string) (*FileBatchOperationTokenObject, error) {
 	tokenBody := fsapi.fm.GetToken(token)
 	// 并保持刷新token的有效性, 除非终止操作否则都继续
 	if nil == tokenBody {
-		return nil, ErrorDiscontinue
+		return nil, ErrorOprationExpires
 	}
 	// fmt.Println("tokenBody: ", tokenBody)
 	return tokenBody.(*FileBatchOperationTokenObject), nil
@@ -702,11 +674,11 @@ func getFileTransferTokenObject(fsapi *FileAPI, token string) (*FileTransferToke
 	tokenBody := fsapi.fm.GetToken(token)
 	// 并保持刷新token的有效性, 除非终止操作否则都继续
 	if nil == tokenBody {
-		return nil, ErrorDiscontinue
+		return nil, ErrorOprationExpires
 	}
 	ftt, ok := tokenBody.(*FileTransferToken)
 	if ok {
 		return ftt, nil
 	}
-	return nil, ErrorDiscontinue
+	return nil, ErrorOprationExpires
 }

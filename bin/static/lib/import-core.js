@@ -9,7 +9,7 @@
 
 if(typeof __import_core__=="undefined"){   
 	__import_core__=true;  
-	var version = "2020.03.15"; 
+	var version = "2020.05.24"; 
 	// JS
 	document.write("<script type='text/javascript' src='/lib/common/extends.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/common/utils.js?v="+version+"'></script>");

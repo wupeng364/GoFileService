@@ -111,9 +111,9 @@ func (fmg *FileManager) DoWrite(relativePath string, ioReader io.Reader) error {
 }
 
 // DoRead 读取文件
-func (fmg *FileManager) DoRead(relativePath string) (Reader, error) {
+func (fmg *FileManager) DoRead(relativePath string, offset int64) (Reader, error) {
 	fs := fmg.mt.getInterface(relativePath)
-	return fs.DoRead(relativePath)
+	return fs.DoRead(relativePath, offset)
 }
 
 // IsFile 是否是文件, 如果路径不对或者驱动不对则为 false

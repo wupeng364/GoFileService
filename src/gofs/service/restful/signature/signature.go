@@ -12,10 +12,12 @@
 package signature
 
 import (
+	"errors"
 	"gutils/hstool"
 	"gutils/mloader"
 	"net/http"
 	"sort"
+	"strconv"
 )
 
 // Signature 签名校验
@@ -44,9 +46,69 @@ func (signature *Signature) CreateWebSession(userID string, r *http.Request) (Ac
 	return signature.sign.GenerateAccessToken(userID, SingnatureTypeAsWeb)
 }
 
+// DestroySignature 注销会话
+func (signature *Signature) DestroySignature(accessKey string) error {
+	return signature.sign.DestroySignature(accessKey)
+}
+
+// DestroySignature4HTTP 注销会话-传入请求
+func (signature *Signature) DestroySignature4HTTP(r *http.Request) error {
+	// 从请求中获取accessKey, 不能为空
+	accessKey := r.Header.Get(RequestHeaderAccessKey)
+	if len(accessKey) == 0 {
+		if ack, err := r.Cookie("ack"); nil == err {
+			accessKey = ack.Value
+		}
+	}
+	if len(accessKey) == 0 {
+		return errors.New(strconv.Itoa(http.StatusUnauthorized))
+	}
+	return signature.DestroySignature(accessKey)
+}
+
 // GetUserIDByAccessKey 获取用户ID
 func (signature *Signature) GetUserIDByAccessKey(ack string) string {
 	return signature.sign.GetUserID(ack)
+}
+
+// SetSessionAttr 设置属性
+func (signature *Signature) SetSessionAttr(accessKey, key, val string) error {
+	return signature.sign.SetSessionAttr(accessKey, key, val)
+}
+
+// SetSessionAttr4HTTP 设置属性-传入请求
+func (signature *Signature) SetSessionAttr4HTTP(r *http.Request, key, val string) error {
+	// 从请求中获取accessKey, 不能为空
+	accessKey := r.Header.Get(RequestHeaderAccessKey)
+	if len(accessKey) == 0 {
+		if ack, err := r.Cookie("ack"); nil == err {
+			accessKey = ack.Value
+		}
+	}
+	if len(accessKey) == 0 {
+		return errors.New(strconv.Itoa(http.StatusUnauthorized))
+	}
+	return signature.SetSessionAttr(accessKey, key, val)
+}
+
+// GetSessionAttr 读取属性
+func (signature *Signature) GetSessionAttr(accessKey, key string) (string, error) {
+	return signature.sign.GetSessionAttr(accessKey, key)
+}
+
+// GetSessionAttr4HTTP 读取属性-传入请求
+func (signature *Signature) GetSessionAttr4HTTP(r *http.Request, key string) (string, error) {
+	// 从请求中获取accessKey, 不能为空
+	accessKey := r.Header.Get(RequestHeaderAccessKey)
+	if len(accessKey) == 0 {
+		if ack, err := r.Cookie("ack"); nil == err {
+			accessKey = ack.Value
+		}
+	}
+	if len(accessKey) == 0 {
+		return "", errors.New(strconv.Itoa(http.StatusUnauthorized))
+	}
+	return signature.GetSessionAttr(accessKey, key)
 }
 
 // RestfulAPIFilter Api签名拦截器
@@ -92,7 +154,7 @@ func (signature *Signature) RestfulAPIFilter(w http.ResponseWriter, r *http.Requ
 		}
 	}
 	// 校验参数合法性
-	if !signature.sign.SignatureVerification(accessKey, sign, requestparameter) {
+	if !signature.sign.VerificationSignature(accessKey, sign, requestparameter) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return // 401
 	}

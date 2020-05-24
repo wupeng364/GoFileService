@@ -643,6 +643,7 @@ Vue.component("fs-selector", {
 			if( !n ){ return; }
 			var self = this;
 			$fsApi.List(n).then(function( data ){
+				data = JSON.parse(data);
 				self.fsData = [];
 				self.selectedDates = [];
 				for(var i=0; i<data.length; i++){
