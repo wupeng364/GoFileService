@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>登陆-文件管理器</title>
-  <script type="text/javascript" src="/lib/import-core.js?v=2020.03.15"></script>
-  <script type="text/javascript" src="/lib/apis/userapi.js?v=2020.03.15"></script>
-  <script type="text/javascript" src="/lib/3party_library/vector.js?v=2020.03.15"></script>
+  <title>登录-文件管理器</title>
+  <script type="text/javascript" src="/lib/import-core.js?v=2020.06.07"></script>
+  <script type="text/javascript" src="/lib/apis/userapi.js?v=2020.06.07"></script>
+  <script type="text/javascript" src="/lib/3party_library/vector.js?v=2020.06.07"></script>
 </head>
 <style type="text/css">
   .login-warp{
@@ -17,7 +17,7 @@
     <div ref="loginwarp" class="login-warp" :style="{'margin-top': loginform_margin_top+'px','margin-left': loginform_margin_left+'px'}" @keyup.enter="handleSubmit">
       <i-form :model="loginform">
         <form-item>
-          <span style="font-size: 20px;color:#666;">登陆系统</span>
+          <span style="font-size: 20px;color:#666;">登录系统</span>
         </form-item>
         <form-item>
           <i-input type="text" v-model="loginform.user" placeholder="用户">
@@ -30,7 +30,7 @@
         </i-input>
         </form-item>
         <form-item>
-          <i-button type="primary" @click="handleSubmit" style="width:100%;">登陆</i-button>
+          <i-button type="primary" @click="handleSubmit" style="width:100%;">登录</i-button>
         </form-item>
       </i-form>
     </div>
@@ -47,14 +47,14 @@ var V_Index = new Vue({
         user: "",
         password: "",
       },
-      message: "正在自动登陆,请稍后..."
+      message: "正在自动登录,请稍后..."
     }
   },
   computed: {
 
   },
   methods: {
-    // 登陆
+    // 登录
     handleSubmit: function( ){
       $userApi.login(this.loginform.user, this.loginform.password).then(function(data){
         $apitools.saveSession(JSON.parse(data));
@@ -63,7 +63,7 @@ var V_Index = new Vue({
         });
       }).catch(function(err){
         console.log(err)
-        V_Index.$Message.error("登陆失败");
+        V_Index.$Message.error("登录失败");
       })
     },
     // 

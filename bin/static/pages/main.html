@@ -2,11 +2,11 @@
 <html>
 <head>
   <title>文件管理器</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <script type="text/javascript" src="/lib/import-core.js?v=2020.03.15"></script>
-  <script type="text/javascript" src="/lib/apis/fsapi.js?v=2020.03.15"></script>
-  <script type="text/javascript" src="/lib/apis/userapi.js?v=2020.03.15"></script>
-  <script type="text/javascript" src="/lib/apis/preview.js?v=2020.03.15"></script>
+  <!-- <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0"> -->
+  <script type="text/javascript" src="/lib/import-core.js?v=2020.06.07"></script>
+  <script type="text/javascript" src="/lib/apis/fsapi.js?v=2020.06.07"></script>
+  <script type="text/javascript" src="/lib/apis/userapi.js?v=2020.06.07"></script>
+  <script type="text/javascript" src="/lib/apis/preview.js?v=2020.07.04"></script>
   <style type="text/css">
     .ivu-layout{
       height:100%;
@@ -28,7 +28,7 @@
                   <a href="javascript:void(0)" class="d_block mg_b_5" style="color: rgb(201, 204, 208);line-height: 20px;">{{currentAccount.UserName}}</a>
                 </div>
                   <Dropdown-Menu slot="list">
-                      <Dropdown-Item name='logout'>注销登陆</Dropdown-Item>
+                      <Dropdown-Item name='logout'>注销登录</Dropdown-Item>
                   </Dropdown-Menu>
               </Dropdown>
             </div>
@@ -150,7 +150,7 @@
       <!-- 编辑用户 -->
       <Drawer :title="userManage.userEdit.isAdd?'新增用户':'修改用户'" width="450px" :closable="false" v-model="userManage.userEdit.show">
         <i-Form ref="useredit" label-position="left" :model="userManage.userEdit" :label-width="80">
-          <Form-Item class="mg_b_10" label="登陆ID: " prop="UserID">
+          <Form-Item class="mg_b_10" label="登录ID: " prop="UserID">
             <i-Input v-if='userManage.userEdit.isAdd' v-model="userManage.userEdit.UserID" placeholder="Enter your user ID"></i-Input>
               <span v-else>{{userManage.userEdit.UserID}}</span>
           </Form-Item>

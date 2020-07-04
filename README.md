@@ -11,6 +11,8 @@ gofs支持简单的路径挂载, 文件基本操作(CRUD). 通过集成aplayer�
 ![文件的基本操作](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/filelist.png "文件的基本操作")
 * 用户管理(CRUD)
 ![用户管理](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/user.png "用户管理")
+* 图片浏览
+![视频在线播放](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/picture.png "图片浏览")
 * 视频在线播放
 ![视频在线播放](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/video.png "视频在线播放")
 * 音频在线播放

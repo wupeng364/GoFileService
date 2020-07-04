@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>图片加载</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
+	<script type="text/javascript" src="/lib/import-core.js?v=2020.07.04"></script>
+  	<script type="text/javascript" src="/lib/apis/preview.js?v=2020.07.04"></script>
+	<script type="text/javascript" src="/lib/3party_library/stick/vue-stick.umd.js?v=2020.07.04"></script>
+	<style type="text/css">
+		html, body{
+			height: unset;
+			overflow: auto;
+			background: #333;
+		}
+		.container {
+			position: relative;
+			min-height: 1000px;
+			margin: 40px 40px;
+		}
+		.tools {
+			padding: 20px;
+			text-align: center;
+			background: #555
+		}
+		.footer {
+			height: 400px;
+			background: #555;
+		}
+
+		.card {
+			background: #fff;
+		}
+
+		.card img {
+			display: block;
+			width: 100%;
+			background: #aaa;
+		}
+
+		.card h2 {
+			margin: 0;
+			padding: 5px 15px;
+			font-size: 14px;
+		}
+
+		.card p {
+			margin: 0;
+			padding: 10px 15px;
+			font-size: 14px;
+		}
+	</style>
+</head>
+
+<body >
+	<div id="app"></div>
+</body>
+<script type="text/javascript">
+"use strict"
+// Vue.use(Stick)
+// 需要编译器
+let _Vue = new Vue({
+	el: '#app',
+	data: {
+		isLoading: false,
+		allDatas: {cindex: 0, list: []},
+		list: [ ],
+		pageIndex: -1,
+		pageSize: 10,
+	},
+	components: {
+		Stick: Stick.component
+	},
+	template: '<div class="container">' +
+		'<Stick ' +
+				':list="list"' +
+				'@onScrollEnd="doLoadMore" ' +
+			'>' +
+			'<template slot-scope="scope">' +
+				'<div class="card cs_p" @click=\'onShowBig(scope.data)\'>' +
+					'<img :src="scope.data.cover" v-if="scope.data.cover" />' +
+					'<h2>{{scope.data.title}}</h2>' +
+					'<p>{{scope.data.intro}}</p>' +
+					// '<button @click="deleteItem(scope.data)">删除</button>' +
+				'</div>' +
+			'</template>' +
+		'</Stick>' +
+		'<div class="tools" >' +
+			'<div v-show="isLoading" >正在加载...</div>' +
+			'<div v-if="isEnd" >没有更多数据了</div><br/>' +
+			'<button v-if="!isEnd && !isLoading" @click="doLoadMore">加载更多</button>' +
+		'</div>' +
+	'</div>',
+	computed: {
+		isEnd: function( ){
+			return this.allDatas.list.length <= this.list.length;
+		}
+	},
+	methods: {
+		onShowBig: function(item){
+			window.open(item.cover);
+		},
+		doLoadMore: function () {
+			this.isLoading = true
+			setTimeout(function () {
+				if(_Vue.allDatas.list.length>0){ 
+					let startIndex = (++_Vue.pageIndex) * _Vue.pageSize;
+					let stopIndex = (_Vue.pageIndex+1) * _Vue.pageSize;
+					_Vue.allDatas.list.slice(startIndex, stopIndex).forEach(function( row ){
+						_Vue.list.push( row );
+					});
+				};
+				_Vue.isLoading = false
+			})
+		},
+		// 构建list
+		doBuilList: function(token, datas){
+			let res = {
+				cindex: -1,
+				list: [],
+				count: -1,
+			};
+			if(datas){
+				let cpath = datas.Path; 
+				if( datas.PeerDatas && datas.PeerDatas.length>0){
+					for (let i = 0; i < datas.PeerDatas.length; i++) {
+						let node = datas.PeerDatas[i];
+						if(!node.IsFile){
+							continue;
+						}
+						let px = node.Path.getSuffixed(false);
+						if( !$preview.isSupport('picture', px)){
+							continue;
+						}
+						if(node.Path == cpath){
+							res.cindex = 0;// res.list.length;
+						}
+						if(res.cindex == -1){
+							continue;
+						}
+						res.list.push({
+							"cover": window.location.origin+'/preview/tokendatas?token='+token+'&type=stream&path='+encodeURIComponent(node.Path),
+							"title": "SEQ-"+(i+1),
+							"intro": node.Path.getName( ),
+						});
+					}
+				}
+			}
+			return res;
+		}
+	},
+	created: function(){
+		try{
+			let token = $utils.getQueryParam(window.location.search, 'token');
+			$preview.tokenDatas(token, 'list').then(function( datas ){
+				// 
+				datas = JSON.parse(datas);
+				let loaddingText = '正在加载: '+datas.Path.getName(false);
+				parent.onLoaded({title:loaddingText, loaddingText:loaddingText});
+				// 开始播放
+				_Vue.allDatas = _Vue.doBuilList(token, datas);
+				_Vue.doLoadMore( );
+				loaddingText = '图片预览';//datas.Path.getName(false);
+				parent.onLoaded({title:loaddingText, loadding:false});
+			}).catch(function(err){
+				parent.onLoaded({title:'加载失败',loaddingText:err.toString()});
+			});
+		}catch(err){
+			parent.onLoaded({title:'加载失败',loaddingText:err.toString()});
+		}
+	}
+});
+</script>
+
+</html>

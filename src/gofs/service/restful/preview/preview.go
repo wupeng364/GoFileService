@@ -133,6 +133,7 @@ func (preview *Preview) TokenDatas(w http.ResponseWriter, r *http.Request) {
 			json, err := json.Marshal(PInfo{
 				Path: tData,
 				PeerDatas: filemanage.FileListSorter{
+					Asc:       true,
 					SortField: "Path",
 				}.Sort(fList),
 			})

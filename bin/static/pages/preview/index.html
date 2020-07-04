@@ -3,8 +3,8 @@
 <head>
   <title></title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
-  <script type="text/javascript" src="/lib/import-core.js?v=2020.03.15"></script>
-  <script type="text/javascript" src="/lib/apis/preview.js?v=2020.03.15"></script>
+  <script type="text/javascript" src="/lib/import-core.js?v=2020.06.07"></script>
+  <script type="text/javascript" src="/lib/apis/preview.js?v=2020.07.04"></script>
 </head>
 <style type="text/css">
   @keyframes ani-demo-spin {
@@ -59,6 +59,10 @@
           case "video":
             this.playerSrc = pathname+'/player/dplayer.html?token='+token;
             this.title = '视频播放';
+          break;
+          case "picture":
+            this.playerSrc = pathname+'/player/picture.html?token='+token;
+            this.title = '图片播放';
           break;
           default:
             this.title = '暂不支持在线预览,正在下载文件';

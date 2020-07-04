@@ -83,7 +83,7 @@
 		apiResponseStautsHandler: function(res){
 			if(res){
 				if(res.Code == 401){
-					res.Data = "登陆过期,请刷新页面";
+					res.Data = "登录过期,请刷新页面";
 					window.location.href = "/";
 				}
 			}

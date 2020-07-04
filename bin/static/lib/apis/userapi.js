@@ -19,7 +19,7 @@
 	var api = { sync:{} };
 
 	/**
-	 * 登陆
+	 * 登录
 	 * return {UserID, AccessKey, SecretKey}
 	 */
 	api.login = function(user, pwd){

@@ -621,14 +621,7 @@ func (fsapi *FileAPI) OpenFile(w http.ResponseWriter, r *http.Request) {
 		httpserver.SendError(w, ErrorOprationExpires)
 		return
 	}
-	//fsapi.fm.RemoveToken(token)
-	rd, err := fsapi.fm.DoRead(tokenObject.FilePath, 0)
-	defer rd.Close()
-	if err != nil {
-		httpserver.SendError(w, err)
-		return
-	}
-	io.Copy(w, rd)
+	doSendStream(fsapi.fm, token, w, r)
 }
 
 // Download 下载
@@ -639,23 +632,10 @@ func (fsapi *FileAPI) Download(w http.ResponseWriter, r *http.Request) {
 		httpserver.SendError(w, ErrorOprationExpires)
 		return
 	}
-	fsapi.fm.RemoveToken(token)
-	rd, err := fsapi.fm.DoRead(tokenObject.FilePath, 0)
-	defer rd.Close()
-	if err != nil {
-		httpserver.SendError(w, err)
-		return
-	}
-	fileSize, err := fsapi.fm.GetFileSize(tokenObject.FilePath)
-	if nil != err {
-		httpserver.SendError(w, err)
-		return
-	}
 	fileName := strtool.GetPathName(tokenObject.FilePath)
 	w.Header().Set("Content-Disposition", "attachment; filename="+fileName)
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Length", strconv.FormatInt(fileSize, 10))
-	io.Copy(w, rd)
+	doSendStream(fsapi.fm, token, w, r)
 }
 
 // getFileBatchOperationTokenObject 获取批文件量操作Token对象
@@ -681,4 +661,94 @@ func getFileTransferTokenObject(fsapi *FileAPI, token string) (*FileTransferToke
 		return ftt, nil
 	}
 	return nil, ErrorOprationExpires
+}
+
+// doSendStream 发送数据流, 支持分段
+func doSendStream(fm *filemanage.FileManager, token string, w http.ResponseWriter, r *http.Request) {
+	tBody := fm.GetToken(token)
+	if nil == tBody {
+		httpserver.SendError(w, ErrorOprationExpires)
+		return
+	}
+	FTTObject, ok := tBody.(*FileTransferToken)
+	if !ok {
+		httpserver.SendError(w, ErrorOprationExpires)
+		return
+	}
+	// 刷新token, 使其不过期
+	fm.RefreshToken(token)
+	// 校验
+	if !fm.IsFile(FTTObject.FilePath) {
+		httpserver.SendError(w, ErrorFileNotExist)
+		return
+	}
+	size, err := fm.GetFileSize(FTTObject.FilePath)
+	if err != nil {
+		httpserver.SendError(w, err)
+		return
+	}
+	qRange := r.FormValue("Range")
+	if len(qRange) == 0 {
+		qRange = r.Header.Get("Range")
+	}
+	start := int64(0)
+	end := int64(size)
+	if len(qRange) > 0 {
+		temp := qRange[strings.Index(qRange, "=")+1:]
+		index := strings.Index(temp, "-")
+		if index > -1 {
+			start, err = strconv.ParseInt(temp[0:strings.Index(temp, "-")], 10, 64)
+			if nil != err {
+				start = 0
+			}
+			end, err = strconv.ParseInt(temp[strings.Index(temp, "-")+1:], 10, 64)
+			if nil != err || end == 0 {
+				end = size
+			}
+		}
+	}
+	fr, err := fm.DoRead(FTTObject.FilePath, start)
+	defer func() {
+		if nil != fr {
+			fr.Close()
+		}
+	}()
+	if nil != err {
+		httpserver.SendError(w, err)
+		return
+	}
+	{
+		stransSize := end - start
+		w.Header().Set("Content-Length", strconv.Itoa(int(stransSize)))
+		if len(qRange) > 0 {
+			w.Header().Set("Content-Range", "bytes "+strconv.Itoa(int(start))+"-"+strconv.Itoa(int(end-1))+"/"+strconv.Itoa(int(size)))
+			w.WriteHeader(http.StatusPartialContent)
+		}
+		//
+		for {
+			if stransSize == 0 || stransSize < 0 {
+				if end == size {
+					// fm.RemoveToken(token)
+				}
+				break
+			}
+			buf := make([]byte, 4096)
+			n, err := fr.Read(buf)
+			if err != nil && err != io.EOF {
+				httpserver.SendError(w, err)
+				break
+			}
+			if 0 == n {
+				break
+			}
+			if n > int(stransSize) {
+				n = int(stransSize)
+			}
+			wn, err := w.Write(buf[:n])
+			if nil != err {
+				break
+			}
+			stransSize = stransSize - int64(wn)
+		}
+	}
 }

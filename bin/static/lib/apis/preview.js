@@ -20,6 +20,7 @@
 		supported: {
 			audio: ['mp3','flac'],
 			video: ['mp4','mov'],
+			picture: ['png', 'gif', 'jpg', 'bmp', 'jpeg', 'icon'],
 		},
 		// 获取一个预览的Token
 		askToken: function( path ){
@@ -57,6 +58,8 @@
 				type = 'audio';
 			}else if(api.isSupport('video', suffix)){
 				type = 'video';
+			}else if(api.isSupport('picture', suffix)){
+				type = 'picture';
 			}else{
 				throw "不支持预览该文件";
 			}
@@ -64,6 +67,7 @@
 		},
 		// 是否是支持的播放类型
 		isSupport: function(type, suffix){
+			suffix = suffix.toLowerCase();
 			return type && suffix && api.supported[type] && api.supported[type].indexOf(suffix) > -1;
 		}
 	};
