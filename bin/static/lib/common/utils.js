@@ -20,7 +20,7 @@
 }(this, function ( ){
 
 	// utils 导出对象, 每个分类通过 utils.extendAttrs 函数拓展, 可以根据需要来加载部分类别函数
-	var utils = {
+	let utils = {
 		// 拓展|覆盖对象属性, B_IsCopy 指定是否使用拷贝的方式给原有对象添加属性, 默认使用拷贝方式
 		extendAttrs: function( OB_Src, OB_Add, B_IsCopy ){
 			if( !OB_Src ){
@@ -29,7 +29,7 @@
 			if(!utils.isType( OB_Src, "object" )){
 				OB_Src = {};
 			}
-			for( var Tx_Key in OB_Add){
+			for( let Tx_Key in OB_Add){
 				if(utils.isType( OB_Add[ Tx_Key ], "object" ) && B_IsCopy !== false ){
 					OB_Src[ Tx_Key ] = utils.extendAttrs(OB_Src[Tx_Key], OB_Add[ Tx_Key ]);
 				}else{
@@ -41,7 +41,7 @@
 		// 获取对象类型
 		getType: function( obj ){
 			try{
-				var testType = Object.prototype.toString.call(obj).slice(8,-1).toLowerCase( );
+				let testType = Object.prototype.toString.call(obj).slice(8,-1).toLowerCase( );
 				return testType.toLowerCase( ); 
 			}catch( e ){
 				return e;
@@ -50,7 +50,7 @@
 		// 判断是否是 XX 类型
 		isType: function( obj, type ){
 			try{
-				var testType = Object.prototype.toString.call(obj).slice(8,-1).toLowerCase( );
+				let testType = Object.prototype.toString.call(obj).slice(8,-1).toLowerCase( );
 				return (testType === type.toLowerCase( )); 
 			}catch( e ){
 				return false;
@@ -106,20 +106,20 @@
 		},	
 		// 随机数生成
 		random: function(len){
-			var _chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678'
+			let _chars = 'ABCDEFGHJKMNPQRSTWXYZabcdefhijkmnprstwxyz2345678'
 			len = len || 32
-			var maxPos = _chars.length
-			var str = ''
-			for (var i = 0; i < len; i++) {
+			let maxPos = _chars.length
+			let str = ''
+			for (let i = 0; i < len; i++) {
 				str += _chars.charAt(Math.floor(Math.random() * maxPos))
 			}
 			return str
 		},
 		// 唯一标识符生成
 		guid: (function( ){
-	        var counter = 0;
+	        let counter = 0;
 	        return function( prefix ) {
-	            var guid = (+new Date()).toString( 32 ),
+	            let guid = (+new Date()).toString( 32 ),
 	                i = 0;
 	            for ( ; i < 5; i++ ) {
 	                guid += Math.floor( Math.random() * 65535 ).toString( 32 );
@@ -130,8 +130,8 @@
 		// 格式化文件大小
 		formatSize:function(bytes){
 			try{
-				var sOutput = bytes + " bytes";
-				for (var aMultiples = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"], nMultiple = 0, nApprox = bytes / 1024; nApprox > 1; nApprox /= 1024, nMultiple++) {
+				let sOutput = bytes + " bytes";
+				for (let aMultiples = ["KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"], nMultiple = 0, nApprox = bytes / 1024; nApprox > 1; nApprox /= 1024, nMultiple++) {
 					sOutput = nApprox.toFixed(3) + " " + aMultiples[nMultiple];
 				}
 				return sOutput;
@@ -156,9 +156,9 @@
 		},
 		// 时间戳|时间对象转某种格式的时间, 默认 yyyyMMddHHmmss
 		dateFormat: function(time, format){
-			var t = Object.prototype.toString.call(time) == "[object Date]"?time:new Date(time);
+			let t = Object.prototype.toString.call(time) == "[object Date]"?time:new Date(time);
 			if(!format){ format = "yyyyMMddHHmmss"; }
-			var tf = function(i){return (i < 10 ? '0' : '') + i};
+			let tf = function(i){return (i < 10 ? '0' : '') + i};
 			return format.replace(/yyyy|MM|dd|HH|mm|ss/g, function(a){
 				switch(a){
 				case 'yyyy':
@@ -188,8 +188,8 @@
 	utils.extendAttrs(utils, {
 		// 获取url里面的查询值
 		getQueryParam: function(url, name){
-			var reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
-			var r = url.substr(1).match(reg);
+			let reg = new RegExp("(^|&)"+ name +"=([^&]*)(&|$)");
+			let r = url.substr(1).match(reg);
 			if(r!=null){
 				return  decodeURIComponent(r[2]); 
 			}
@@ -197,18 +197,17 @@
 		},
 		// 设置cookie
 		setCookie:function (cname, cvalue, exdays) {
-			var expires ="";
+			let expires ="";
 			if(exdays!=undefined && exdays>0){
-				var d = new Date();
+				let d = new Date();
 				d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
-				var expires = "expires=" + d.toUTCString() + ";";			
+				expires = "expires=" + d.toUTCString() + ";";			
 			}
-			//$cookie.set("access","1");
 			document.cookie = cname + "=" + cvalue + ";path=/;" + expires;
 		},
 		// 读取cookie
 		getCookie:function (cname) {
-			var arr, reg = new RegExp("(^| )" + cname + "=([^;]*)(;|$)");
+			let arr, reg = new RegExp("(^| )" + cname + "=([^;]*)(;|$)");
 			if (arr = document.cookie.match(reg))
 				return (arr[2]);
 			else
@@ -226,7 +225,7 @@
 		},
 		// 触发鼠标事件
 		triggerMouseEvent: function( el, ev, bubbles, cancelable ){
-			var e = document.createEvent("MouseEvents");
+			let e = document.createEvent("MouseEvents");
 			e.initEvent(ev, bubbles, cancelable);
 			el.dispatchEvent(e); 
 		},
@@ -287,7 +286,7 @@
 				if(opt.timeout){
 					opt.xhr.timeout = parseInt(opt.timeout);
 				}
-				for(var key in opt.headers){
+				for(let key in opt.headers){
 					opt.xhr.setRequestHeader(key, opt.headers[key]);
 				}
 			}
@@ -309,20 +308,20 @@
 		buildPayload: function (params) {
 			if(!params){ return ""; }
 			// 去除无效字段
-			var paramsmap = new Map( );
-			for(var key in params){
+			let paramsmap = new Map( );
+			for(let key in params){
 				if (params[key] == undefined || params[key] == null || params[key].length == 0) {
 					continue;
 				}
 				paramsmap.set(key, params[key]);
 			}
 			// 构建请求负载
-			var payload, payload_encode = "";
+			let payload, payload_encode = "";
 			if(paramsmap.size > 0 ){
-				var keys = paramsmap.keys( ).sort( );
-				var payloads = []; var payloads_encode = [];
-				for (var i = 0; i < keys.length; i++) {
-					var val = paramsmap.get(keys[i]);
+				let keys = paramsmap.keys( ).sort( );
+				let payloads = []; let payloads_encode = [];
+				for (let i = 0; i < keys.length; i++) {
+					let val = paramsmap.get(keys[i]);
 					payloads.push(keys[i]+"="+val);
 					payloads_encode.push(keys[i]+"="+encodeURIComponent(val));
 				}
@@ -337,12 +336,12 @@
 		// obj to url
 		json2query: function(obj, prefix) {
 			prefix = prefix || '';
-			var pairs = [];
-			var has = Object.prototype.hasOwnProperty;
+			let pairs = [];
+			let has = Object.prototype.hasOwnProperty;
 			if ('string' !== typeof prefix){
 				prefix = '?';
 			}
-			for (var key in obj) {
+			for (let key in obj) {
 				if (has.call(obj, key)) {
 					pairs.push(key +'='+ encodeURIComponent(obj[key]));
 				}
@@ -351,7 +350,7 @@
 		},
 		// From表单POST上传
 		uploadByFormData: function( url, file, ctrl ){
-			var uploader = {
+			let uploader = {
 				ctrl: {
 					filekey: "file",
 					method: "POST",
@@ -371,7 +370,7 @@
 				},
 				start: function( ){
 					uploader.xhr.open(uploader.ctrl.method, url);
-					for( var key in uploader.ctrl.header ){
+					for( let key in uploader.ctrl.header ){
 						uploader.xhr.setRequestHeader(key, uploader.ctrl.header[key])
 					}
 					uploader.xhr.overrideMimeType("application/octet-stream");
@@ -381,7 +380,7 @@
 			// 合并配置
 			uploader.ctrl = utils.extendAttrs(uploader.ctrl, ctrl);
 		    // 添加表单
-			for(var key in uploader.ctrl.form ){
+			for(let key in uploader.ctrl.form ){
 				uploader.formData.append(key, uploader.ctrl.form[key]);
 			}
 			uploader.formData.append(uploader.ctrl.filekey, file);
@@ -393,7 +392,7 @@
 		    uploader.xhr.upload.addEventListener('error', uploader.ctrl.error);
 		    uploader.xhr.upload.addEventListener('abort', uploader.ctrl.abort);
 		    uploader.xhr.onreadystatechange = function(e){
-		    	var xhr = e.target;
+		    	let xhr = e.target;
 		    	if(xhr.readyState == 4 && xhr.status!=200){
 		    		uploader.ctrl.error(new Error(xhr.responseText?xhr.responseText:xhr.statusText) );
 		    	}
@@ -402,7 +401,7 @@
 		},
 		// FileReader 请求体上传
 		uploadByFileReader: function ( url, blob, ctrl ){
-			var uploader = {
+			let uploader = {
 				ctrl: {
 					method: "POST",
 					header: {
@@ -418,7 +417,7 @@
 				},
 				start: function( ){
 					uploader.xhr.open(uploader.ctrl.method, url);
-					for( var key in uploader.ctrl.header ){
+					for( let key in uploader.ctrl.header ){
 						uploader.xhr.setRequestHeader(key, uploader.ctrl.header[key])
 					}
 					uploader.xhr.overrideMimeType("application/octet-stream");

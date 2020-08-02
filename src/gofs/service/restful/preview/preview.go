@@ -57,7 +57,7 @@ func (preview *Preview) init() {
 	}
 
 	// 注册Api签名拦截器
-	preview.hs.AddIgnoreFilter(baseurl + "/tokendatas")
+	// preview.hs.AddIgnoreFilter(baseurl + "/tokendatas")
 	preview.hs.AddURLFilter(baseurl+"/:"+`[\S]+`, preview.sg.RestfulAPIFilter)
 
 	fmt.Println("   > PreviewModule http registered end")

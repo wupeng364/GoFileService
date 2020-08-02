@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 )
 
 // Signature 签名校验
@@ -101,6 +102,9 @@ func (signature *Signature) GetSessionAttr4HTTP(r *http.Request, key string) (st
 	// 从请求中获取accessKey, 不能为空
 	accessKey := r.Header.Get(RequestHeaderAccessKey)
 	if len(accessKey) == 0 {
+		accessKey = r.FormValue(RequestHeaderAccessKey)
+	}
+	if len(accessKey) == 0 {
 		if ack, err := r.Cookie("ack"); nil == err {
 			accessKey = ack.Value
 		}
@@ -114,13 +118,12 @@ func (signature *Signature) GetSessionAttr4HTTP(r *http.Request, key string) (st
 // RestfulAPIFilter Api签名拦截器
 func (signature *Signature) RestfulAPIFilter(w http.ResponseWriter, r *http.Request, next hstool.FilterNext) {
 	//fmt.Println("ApiFilter: ", r.RemoteAddr, r.URL.Path)
-	// 从请求中获取accessKey, 不能为空
-	accessKey := r.Header.Get(RequestHeaderAccessKey)
-	// 从请求中获取signature, 不能为空
-	sign := r.Header.Get(RequestHeaderSign)
-	if len(accessKey) == 0 || len(sign) == 0 {
-		w.WriteHeader(http.StatusUnauthorized)
-		return // 401
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if "OPTIONS" == strings.ToUpper(r.Method) {
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "*")
+		w.WriteHeader(http.StatusOK)
+		return
 	}
 	// 填充Form对象
 	if nil == r.Form {
@@ -131,12 +134,23 @@ func (signature *Signature) RestfulAPIFilter(w http.ResponseWriter, r *http.Requ
 			return
 		}
 	}
+	// 从请求中获取accessKey, 不能为空
+	accessKey := r.Header.Get(RequestHeaderAccessKey)
+	if len(accessKey) == 0 {
+		accessKey = r.Form[RequestHeaderAccessKey][0]
+	}
+	// 从请求中获取signature, 不能为空
+	sign := r.Header.Get(RequestHeaderSign)
+	if len(sign) == 0 {
+		sign = r.Form[RequestHeaderSign][0]
+	}
+
 	// 构建请求参数
 	requestparameter := ""
 	if nil != r.Form && len(r.Form) > 0 {
 		keys := make([]string, 0) // 去掉参数为空的传值
 		for key, val := range r.Form {
-			if len(val) > 0 {
+			if len(val) > 0 && key != RequestHeaderSign && key != RequestHeaderAccessKey {
 				keys = append(keys, key)
 			}
 		}

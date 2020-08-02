@@ -536,7 +536,7 @@ function Victor(container, anitOut) {
             zRange: 1,
             ambient: "#6b6b6b",
             diffuse: "#A5A5A5",
-            speed: 0.0002
+            speed: 0.0001
         };
         var G = {
             count: 2,

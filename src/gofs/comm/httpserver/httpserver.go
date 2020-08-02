@@ -49,6 +49,13 @@ func (httpserver *HTTPServer) ModuleOpts() mloader.Opts {
 // AddIgnoreFilter 注册忽略签名验证的路径
 func (httpserver *HTTPServer) AddIgnoreFilter(url string) {
 	httpserver.serviceRouter.AddURLFilter(url, func(w http.ResponseWriter, r *http.Request, next hstool.FilterNext) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		if "OPTIONS" == strings.ToUpper(r.Method) {
+			w.Header().Set("Access-Control-Allow-Headers", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "*")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
 		next()
 	})
 }

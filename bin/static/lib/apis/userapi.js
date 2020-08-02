@@ -25,7 +25,7 @@
 	api.login = function(user, pwd){
 		return new Promise(function(resolve, reject){
 			$utils.AjaxRequest({
-				uri: "/userapi/checkpwd",
+				uri: $apitools.buildAPIURL("/userapi/checkpwd"),
 				datas: {
 					"userid": user,
 					"pwd": pwd,

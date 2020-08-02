@@ -139,7 +139,7 @@ let _Vue = new Vue({
 							continue;
 						}
 						res.list.push({
-							"cover": window.location.origin+'/preview/tokendatas?token='+token+'&type=stream&path='+encodeURIComponent(node.Path),
+							"cover": $apitools.getSignAPIURL($apitools.buildAPIURL('/preview/tokendatas'), {token: token, type:'stream', path:node.Path}),
 							"title": "SEQ-"+(i+1),
 							"intro": node.Path.getName( ),
 						});

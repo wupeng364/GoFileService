@@ -290,7 +290,6 @@ func (locl localDriver) DoWrite(relativePath string, ioReader io.Reader) error {
 		return gpErr
 	}
 	tempPath := getAbsoluteTempPath(locl.mountNode)
-	fmt.Println("tempPath", tempPath)
 	fs, wErr := fstool.GetWriter(tempPath)
 	if wErr != nil {
 		return wErr

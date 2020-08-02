@@ -80,6 +80,13 @@ func (html *HTMLPage) onInit() {
 
 // staticFilter 静态资源过滤器
 func (html *HTMLPage) staticFilter(w http.ResponseWriter, r *http.Request, next hstool.FilterNext) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	if "OPTIONS" == strings.ToUpper(r.Method) {
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "*")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	// fmt.Println("Static Path: ", r.URL.Path)
 	if strings.HasSuffix(r.URL.Path, ".html") {
 		if ack, err := r.Cookie("ack"); nil == err {

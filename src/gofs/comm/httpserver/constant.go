@@ -35,15 +35,15 @@ type APIResponse struct {
 
 // SendSuccess 返回成功结果
 func SendSuccess(w http.ResponseWriter, msg string) {
-	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-type", "application/json;charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 	w.Write(parse2ApiJSON(http.StatusOK, msg))
 }
 
 // SendError 返回失败结果
 func SendError(w http.ResponseWriter, err error) {
-	w.WriteHeader(http.StatusBadRequest)
 	w.Header().Set("Content-type", "application/json;charset=utf-8")
+	w.WriteHeader(http.StatusBadRequest)
 	w.Write(parse2ApiJSON(http.StatusBadRequest, err.Error()))
 }
 

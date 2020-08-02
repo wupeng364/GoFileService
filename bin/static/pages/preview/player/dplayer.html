@@ -25,7 +25,7 @@ window.onload = function(){
       (new DPlayer({
         container: document.getElementById('dplayer'),
         video: {
-          url: window.location.origin+'/preview/tokendatas?token='+token+'&type=stream'
+          url: $apitools.getSignAPIURL($apitools.buildAPIURL('/preview/tokendatas'), {token: token, type:'stream'}),
             // pic: 'demo.png',
             // thumbnails: 'thumbnails.jpg',
         },

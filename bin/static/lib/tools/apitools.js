@@ -19,7 +19,58 @@
 
 	var apitools = {
 		_Const: {
-			ack: "access_object"
+			ack: "access_object",
+			host: "access_host",
+			hosturi: localStorage.getItem("access_host"),
+		},
+		/**
+		 * 设置API主机地址
+		 */
+		setAPIHost: function( uri ){
+			if(uri && uri.length > 0){
+				localStorage.setItem(this._Const.host, uri);
+				this._Const.hosturi = uri;
+			}else{
+				localStorage.removeItem(this._Const.host);
+			}
+		},
+		getAPIHost: function( ){
+			return this._Const.hosturi?this._Const.hosturi:'';
+		},
+		/**
+		 * 生成一个完整的url
+		 * 如: /a/b/b --> https://127.0.0.1/a/b/c
+		 */
+		buildAPIURL: function( url ){
+			return this._Const.hosturi?this._Const.hosturi+url:window.location.origin+url;
+		},
+		// 构建签名url
+		getSignAPIURL: function (url, params) {
+			if(!params){ params = {}; }
+			let session = apitools.getSession( );
+			// 去除无效字段
+			let paramsmap = new Map( );
+			for(let key in params){
+				if (params[key] == undefined || params[key] == null || params[key].length == 0) {
+					continue;
+				}
+				paramsmap.set(key, params[key]);
+			}
+			// 构建请求负载
+			let payloads = []; let payloads_encode = [];
+			if(paramsmap.size > 0 ){
+				let keys = paramsmap.keys( ).sort( );
+				for (let i = 0; i < keys.length; i++) {
+					let val = paramsmap.get(keys[i]);
+					payloads.push(keys[i]+"="+val);
+					payloads_encode.push(keys[i]+"="+encodeURIComponent(val));
+				}
+			}
+			if(payloads.length >0){
+				return url +'?'+payloads_encode.join("&")+'&ack='+session.AccessKey+"&sign="+md5(payloads.join("&") + session.SecretKey)
+			}else{
+				return url +'?ack='+session.AccessKey+'&sign='+md5(session.SecretKey)
+			}
 		},
 		/**
 		 * Api自动签名请求
@@ -29,6 +80,11 @@
 			opt.session = session;
 			if(!session||!session.SecretKey||!session.AccessKey){
 				throw new Error("Signature is empty");
+			}
+			if(this._Const.hosturi && this._Const.hosturi.length > 0){
+				if(!opt.uri.startWith('http://') && !opt.uri.startWith('https://')){
+					opt.uri = this._Const.hosturi + opt.uri;
+				}
 			}
 			var request = $utils.AjaxRequest( opt );
 			var signPayload = request.payload.payload;
@@ -84,7 +140,7 @@
 			if(res){
 				if(res.Code == 401){
 					res.Data = "登录过期,请刷新页面";
-					window.location.href = "/";
+					(top.location||window.location).href = "/";
 				}
 			}
 		},

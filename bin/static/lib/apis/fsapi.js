@@ -41,19 +41,19 @@
 		// 获取一个下载的Url
 		GetDownloadUrl: function( path ){
 			return api.GetTransferToken( path ).then(function( data ){
-				return "/fsapi/download/"+data
+				return $apitools.buildAPIURL( "/fsapi/download/"+data );
 			});
 		},
 		// 获取一个打开的Url - 流
 		GetSteamUrl: function( path ){
 			return api.GetTransferToken( path ).then(function( data ){
-				return "/fsapi/openfile/"+data+path.getSuffixed( );
+				return $apitools.buildAPIURL( "/fsapi/openfile/"+data+path.getSuffixed( ) );
 			});
 		},
 		// 获取一个上载的Url
 		GetUploadUrl: function( path ){
 			return api.GetTransferToken( path ).then(function( data ){
-				return "/fsapi/upload/"+data;
+				return $apitools.buildAPIURL( "/fsapi/upload/"+data );
 			}).catch(function( ){
 				return "";
 			});

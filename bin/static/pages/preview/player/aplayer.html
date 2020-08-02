@@ -57,7 +57,7 @@ function buildMusicList(token, datas){
         res.list.push({
             name: node.Path.getName(false),
             // artist: tags.artist,
-            url:  window.location.origin+'/preview/tokendatas?token='+token+'&type=stream&path='+encodeURIComponent(node.Path),
+            url: $apitools.getSignAPIURL($apitools.buildAPIURL('/preview/tokendatas'), {token: token, type:'stream', path: node.Path}),
             // cover: curl
         });
       }
