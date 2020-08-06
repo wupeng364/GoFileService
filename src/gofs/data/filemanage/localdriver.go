@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"gutils/fstool"
 	"io"
-	"path/filepath"
 	"strings"
 )
 
@@ -29,19 +28,19 @@ type localDriver struct {
 // IsExist 文件是否存在
 func (locl localDriver) IsExist(relativePath string) (bool, error) {
 	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
-	return fstool.IsExist(absPath), err
+	return fstool.IsExist(absPath), locl.wrapError(err)
 }
 
 // IsDir IsDir
 func (locl localDriver) IsDir(relativePath string) (bool, error) {
 	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
-	return fstool.IsDir(absPath), err
+	return fstool.IsDir(absPath), locl.wrapError(err)
 }
 
 // IsFile IsFile
 func (locl localDriver) IsFile(relativePath string) (bool, error) {
 	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
-	return fstool.IsFile(absPath), err
+	return fstool.IsFile(absPath), locl.wrapError(err)
 }
 
 // GetDirList 获取路径列表, 返回相对路径
@@ -52,7 +51,7 @@ func (locl localDriver) GetDirList(relativePath string) ([]string, error) {
 	}
 	ls, err := fstool.GetDirList(absPath)
 	if nil != err {
-		return make([]string, 0), err
+		return make([]string, 0), locl.wrapError(err)
 	}
 	// 如果是挂载目录根目录, 需要处理 缓存目录
 	if relativePath == "/" {
@@ -77,7 +76,8 @@ func (locl localDriver) GetFileSize(relativePath string) (int64, error) {
 	if nil != err {
 		return -1, err
 	}
-	return fstool.GetFileSize(absPath)
+	size, err := fstool.GetFileSize(absPath)
+	return size, locl.wrapError(err)
 }
 
 // GetModifyTime GetModifyTime
@@ -102,7 +102,7 @@ func (locl localDriver) DoMove(src string, dst string, replace, ignore bool, cal
 	if nil != err {
 		return err
 	}
-	if filepath.Clean(locl.mountNode.mtAddr) == absSrc {
+	if locl.mountNode.mtAddr == absSrc {
 		return errors.New(src + " is mount root, cannot move")
 	}
 	// 目标位置驱动接口
@@ -122,7 +122,7 @@ func (locl localDriver) DoMove(src string, dst string, replace, ignore bool, cal
 					return callback(rSrc, rDst, &MoveError{
 						SrcIsExist:  fstool.IsExist(srcPath),
 						DstIsExist:  fstool.IsExist(dstPath),
-						ErrorString: parseErrorString(locl.mountNode.mtAddr, dstMountItem.mtAddr, err),
+						ErrorString: clearMountAddr(locl.mountNode, dstMountItem, err),
 					})
 				}
 				return callback(rSrc, rDst, nil)
@@ -151,7 +151,7 @@ func (locl localDriver) DoRename(relativePath string, newName string) error {
 	if len(newName) == 0 {
 		return nil
 	}
-	return fstool.Rename(absSrc, newName)
+	return locl.wrapError(fstool.Rename(absSrc, newName))
 }
 
 // 新建文件夹
@@ -163,7 +163,7 @@ func (locl localDriver) DoNewFolder(relativePath string) error {
 	if nil != err {
 		return err
 	}
-	return fstool.Mkdir(absSrc)
+	return locl.wrapError(fstool.Mkdir(absSrc))
 }
 
 // DoDelete 删除文件|文件夹
@@ -186,7 +186,7 @@ func (locl localDriver) DoDelete(relativePath string) error {
 	if nil == mvErr {
 		go locl.DoClearDeletings()
 	}
-	return mvErr
+	return locl.wrapError(mvErr)
 }
 
 // DoClearDeletings 删除各个分区内的'临时删除文件'
@@ -198,7 +198,7 @@ func (locl localDriver) DoClearDeletings() {
 				continue
 			}
 			for _, temp := range dirs {
-				err := fstool.RemoveAll(filepath.Clean(val.mtAddr + "/" + deletingDir + "/" + temp))
+				err := fstool.RemoveAll(val.mtAddr + "/" + deletingDir + "/" + temp)
 				if nil != err {
 					fmt.Println("DoClearDeletings", err)
 				}
@@ -230,7 +230,7 @@ func (locl localDriver) DoCopy(src, dst string, replace, ignore bool, callback C
 					return callback(rSrc, rDst, &CopyError{
 						SrcIsExist:  fstool.IsExist(absSrc),
 						DstIsExist:  fstool.IsExist(absDst),
-						ErrorString: parseErrorString(locl.mountNode.mtAddr, dstMountItem.mtAddr, err),
+						ErrorString: clearMountAddr(locl.mountNode, dstMountItem, err),
 					})
 				}
 				return callback(rSrc, rDst, nil)
@@ -243,7 +243,7 @@ func (locl localDriver) DoCopy(src, dst string, replace, ignore bool, callback C
 					return callback(rSrc, rDst, &CopyError{
 						SrcIsExist:  fstool.IsExist(srcPath),
 						DstIsExist:  fstool.IsExist(dstPath),
-						ErrorString: parseErrorString(locl.mountNode.mtAddr, dstMountItem.mtAddr, err),
+						ErrorString: clearMountAddr(locl.mountNode, dstMountItem, err),
 					})
 				}
 				return callback(rSrc, rDst, nil)
@@ -271,11 +271,11 @@ func (locl localDriver) DoRead(relativePath string, offset int64) (Reader, error
 	}
 	fs, err := fstool.OpenFile(absDst)
 	if nil != err {
-		return nil, err
+		return nil, locl.wrapError(err)
 	}
 	_, err = fs.Seek(offset, io.SeekStart)
 	if nil != err {
-		return nil, err
+		return nil, locl.wrapError(err)
 	}
 	return fs, nil
 }
@@ -292,42 +292,66 @@ func (locl localDriver) DoWrite(relativePath string, ioReader io.Reader) error {
 	tempPath := getAbsoluteTempPath(locl.mountNode)
 	fs, wErr := fstool.GetWriter(tempPath)
 	if wErr != nil {
-		return wErr
+		return locl.wrapError(wErr)
 	}
 	_, cpErr := io.Copy(fs, ioReader)
 	if nil == cpErr {
 		fsCloseErr := fs.Close()
 		if fsCloseErr == nil {
 			return fstool.MoveFiles(tempPath, absDst, true, false, func(srcPath, dstPath string, err error) error {
-				return err
+				return locl.wrapError(err)
 			})
 		}
-		return fsCloseErr
+		return locl.wrapError(fsCloseErr)
 	}
 	fsCloseErr := fs.Close()
 	if nil != fsCloseErr {
-		return fsCloseErr
+		return locl.wrapError(fsCloseErr)
 	}
 	rmErr := fstool.RemoveFile(tempPath)
 	if rmErr != nil {
-		return rmErr
+		return locl.wrapError(rmErr)
 	}
-	return cpErr
+	return locl.wrapError(cpErr)
 }
 
-// parseErrorString 去除具体位置信息
-func parseErrorString(src, dsc string, err error) string {
+// wrapLocalError 重新包装本地驱动错误信息, 避免真实路径暴露
+func (locl localDriver) wrapError(err error) error {
 	if nil != err {
-		src = filepath.Clean(src)
-		dsc = filepath.Clean(dsc)
-		errorString := err.Error()
-		if strings.Index(errorString, src) > -1 {
-			errorString = strings.Replace(errorString, src, "", -1)
+		errStr := err.Error()
+		if len(errStr) > 0 {
+			rStr := locl.mountNode.mtPath
+			if locl.mountNode.mtPath == "/" {
+				rStr = ""
+			}
+			errStr = strings.Replace(errStr, "\\", "/", -1)
+			errStr = strings.Replace(errStr, locl.mountNode.mtAddr, rStr, -1)
+			return errors.New(errStr)
 		}
-		if strings.Index(errorString, dsc) > -1 {
-			errorString = strings.Replace(errorString, dsc, "", -1)
+	}
+	return err
+}
+
+// clearMountAddr 去除挂载目录的位置信息
+func clearMountAddr(srcMount, destMount mountNodes, err error) string {
+	if nil != err {
+		errorStr := strings.Replace(err.Error(), "\\", "/", -1)
+		if strings.Index(errorStr, srcMount.mtAddr) > -1 {
+			// /root/datas/a/b -> /a/b/a/b
+			rStr := srcMount.mtPath
+			if srcMount.mtPath == "/" {
+				rStr = ""
+			}
+			errorStr = strings.Replace(errorStr, srcMount.mtAddr, rStr, -1)
 		}
-		return errorString
+		if strings.Index(errorStr, destMount.mtAddr) > -1 {
+			rStr := destMount.mtPath
+			if destMount.mtPath == "/" {
+				rStr = ""
+			}
+			errorStr = strings.Replace(errorStr, destMount.mtAddr, rStr, -1)
+		}
+		return errorStr
 	}
 	return ""
 }

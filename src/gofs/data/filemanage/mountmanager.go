@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"gutils/fstool"
 	"gutils/strtool"
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -67,13 +66,13 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 		// 本地驱动
 		if mtnds[count].mtType == localTypeKey {
 			// 初始化必要的文件夹
-			loclTemp := filepath.Clean(mtnds[count].mtAddr + "/" + tempDir)
+			loclTemp := strtool.Parse2UnixPath(mtnds[count].mtAddr + "/" + tempDir)
 			if !fstool.IsDir(loclTemp) {
 				if err := fstool.MkdirAll(loclTemp); nil != err {
 					panic("Create Folder Failed, Path: " + loclTemp + ", " + err.Error())
 				}
 			}
-			loclDeleting := filepath.Clean(mtnds[count].mtAddr + "/" + deletingDir)
+			loclDeleting := strtool.Parse2UnixPath(mtnds[count].mtAddr + "/" + deletingDir)
 			if !fstool.IsDir(loclDeleting) {
 				if err := fstool.MkdirAll(loclDeleting); nil != err {
 					panic("Create Folder Failed, Path: " + loclDeleting + ", " + err.Error())
@@ -86,7 +85,7 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 			}
 			if nil != dirs {
 				for _, temp := range dirs {
-					err = fstool.RemoveAll(filepath.Clean(loclTemp + "/" + temp))
+					err = fstool.RemoveAll(strtool.Parse2UnixPath(loclTemp + "/" + temp))
 					if nil != err {
 						panic("Clear temps Failed, Error: " + err.Error())
 					}
@@ -98,7 +97,7 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 			}
 			if nil != dirs {
 				for _, temp := range dirs {
-					err := fstool.RemoveAll(filepath.Clean(loclDeleting + "/" + temp))
+					err := fstool.RemoveAll(strtool.Parse2UnixPath(loclDeleting + "/" + temp))
 					if nil != err {
 						panic("Clear temps Failed, Error: " + err.Error())
 					}
@@ -206,7 +205,7 @@ func parseMountNodes(mi mountNodes) mountNodes {
 				panic(err)
 			}
 		}
-		mi.mtAddr = filepath.Clean(mi.mtAddr)
+		mi.mtAddr = strtool.Parse2UnixPath(mi.mtAddr)
 	}
 	// 需要注意挂载路径的结尾符号 /
 	lastIndex := strings.LastIndex(mi.mtPath, "/")
@@ -233,7 +232,7 @@ func getAbsolutePath(mountNode mountNodes, relativePath string) (abs string, rlP
 		0 == strings.Index(rlPath, "/"+sysDir+"/") {
 		return abs, rlPath, errors.New("Does not allow access: " + rlPath)
 	}
-	abs = filepath.Clean(mountNode.mtAddr + rlPath)
+	abs = strtool.Parse2UnixPath(mountNode.mtAddr + rlPath)
 	//fmt.Println( "getAbsolutePath: ", rlPath, abs )
 	return
 }
@@ -241,18 +240,19 @@ func getAbsolutePath(mountNode mountNodes, relativePath string) (abs string, rlP
 // getRelativePath 获取相对路径
 func getRelativePath(mti mountNodes, absolute string) string {
 	// fmt.Println("getRelativePath: ", mti.mtAddr, absolute)
+	absolute = strtool.Parse2UnixPath(absolute)
 	if strings.HasPrefix(absolute, mti.mtAddr) {
-		return path.Clean(mti.mtPath + "/" + strings.Replace(absolute[len(mti.mtAddr):], "\\", "/", -1))
+		return strtool.Parse2UnixPath(mti.mtPath + "/" + absolute[len(mti.mtAddr):])
 	}
-	return path.Clean(strings.Replace(absolute, "\\", "/", -1))
+	return absolute
 }
 
 // getAbsoluteTempPath 获取该分区下的缓存目录
 func getAbsoluteTempPath(mountNode mountNodes) string {
-	return filepath.Clean(mountNode.mtAddr + "/" + tempDir + "/" + strtool.GetUUID())
+	return strtool.Parse2UnixPath(mountNode.mtAddr + "/" + tempDir + "/" + strtool.GetUUID())
 }
 
 // getAbsoluteDeletingPath 获取一个放置删除文件的目录
 func getAbsoluteDeletingPath(mountNode mountNodes) string {
-	return filepath.Clean(mountNode.mtAddr + "/" + deletingDir + "/" + strconv.FormatInt(time.Now().UnixNano(), 10))
+	return strtool.Parse2UnixPath(mountNode.mtAddr + "/" + deletingDir + "/" + strconv.FormatInt(time.Now().UnixNano(), 10))
 }

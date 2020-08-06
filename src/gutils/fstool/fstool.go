@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -149,8 +150,8 @@ func RemoveAll(file string) error {
 
 // Rename 重命名
 func Rename(old, newName string) error {
-	_path := filepath.Clean(old)
-	if strings.Index(_path, "\\") > -1 {
+	path := path.Clean(old)
+	if strings.Index(path, "\\") > -1 {
 		return os.Rename(old, old[:strings.LastIndex(old, "\\")+1]+newName)
 	}
 	return os.Rename(old, old[:strings.LastIndex(old, "/")+1]+newName)
@@ -158,8 +159,8 @@ func Rename(old, newName string) error {
 
 // MoveFilesAcrossDisk 移动文件|文件夹,可跨分区移动(源路径, 目标路径, 重复覆盖, 重复忽略, 操作回调) 操作结果
 func MoveFilesAcrossDisk(src, dst string, replace, ignore bool, callback MoveCallback) error {
-	src = filepath.Clean(src)
-	dst = filepath.Clean(dst)
+	src = path.Clean(src)
+	dst = path.Clean(dst)
 	if src == dst && len(src) > 0 {
 		return nil
 	}
@@ -178,8 +179,6 @@ func MoveFilesAcrossDisk(src, dst string, replace, ignore bool, callback MoveCal
 
 // MoveFiles 移动文件|夹, 如果存在的话就列表后逐一移动 (源路径, 目标路径, 重复覆盖, 重复忽略, 操作回调) 操作结果
 func MoveFiles(src, dst string, replace, ignore bool, callback MoveCallback) error {
-	src = filepath.Clean(src)
-	dst = filepath.Clean(dst)
 	if src == dst && len(src) > 0 {
 		return nil
 	}
@@ -246,7 +245,7 @@ func MoveFileByCopying(src, dst string, replace, ignore bool, callback MoveCallb
 		return os.Remove(src)
 	}
 	// 复制文件夹
-	err := CopyFiles(src, dst, replace, ignore, func(srcPath, dstPath string, err error) error {
+	err := CopyFiles(path.Clean(src), path.Clean(dst), replace, ignore, func(srcPath, dstPath string, err error) error {
 		if err == nil && IsFile(srcPath) {
 			err = os.Remove(srcPath)
 		}
@@ -319,8 +318,6 @@ func CopyFiles(src, dst string, replace, ignore bool, callback CopyCallback) err
 	if IsFile(dst) {
 		return callback(src, dst, PathExist("CopyFiles", dst))
 	}
-	dst = filepath.Clean(dst)
-	src = filepath.Clean(src)
 	srcLen := len(src)
 	return filepath.Walk(src, func(s string, f os.FileInfo, err error) error {
 		d := dst + s[srcLen:]

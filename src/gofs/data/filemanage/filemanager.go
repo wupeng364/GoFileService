@@ -12,10 +12,13 @@
 package filemanage
 
 import (
+	"errors"
 	"gofs/comm/conf"
 	"gutils/mloader"
+	"gutils/strtool"
 	"gutils/tokentool"
 	"io"
+	"strings"
 )
 
 // FileManager 文件管理
@@ -76,48 +79,88 @@ func (fmg *FileManager) RemoveToken(token string) {
 
 // DoRename DoRename
 func (fmg *FileManager) DoRename(relativePath, newName string) error {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return err
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoRename(relativePath, newName)
 }
 
 // DoNewFolder DoNewFolder
 func (fmg *FileManager) DoNewFolder(relativePath string) error {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return err
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoNewFolder(relativePath)
 }
 
 // DoDelete 删除文件|文件夹
 func (fmg *FileManager) DoDelete(relativePath string) error {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return err
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoDelete(relativePath)
 }
 
 // DoMove 移动文件|文件夹
 func (fmg *FileManager) DoMove(src, dest string, replace, ignore bool, callback MoveCallback) error {
+	src, err := checkPathSafety(src)
+	if nil != err {
+		return err
+	}
+	dest, err = checkPathSafety(dest)
+	if nil != err {
+		return err
+	}
 	fs := fmg.mt.getInterface(src)
 	return fs.DoMove(src, dest, replace, ignore, callback)
 }
 
 // DoCopy 复制文件|夹
 func (fmg *FileManager) DoCopy(src, dest string, replace, ignore bool, callback CopyCallback) error {
+	src, err := checkPathSafety(src)
+	if nil != err {
+		return err
+	}
+	dest, err = checkPathSafety(dest)
+	if nil != err {
+		return err
+	}
 	fs := fmg.mt.getInterface(src)
 	return fs.DoCopy(src, dest, replace, ignore, callback)
 }
 
 // DoWrite 写入文件
 func (fmg *FileManager) DoWrite(relativePath string, ioReader io.Reader) error {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return err
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoWrite(relativePath, ioReader)
 }
 
 // DoRead 读取文件
 func (fmg *FileManager) DoRead(relativePath string, offset int64) (Reader, error) {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return nil, err
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoRead(relativePath, offset)
 }
 
 // IsFile 是否是文件, 如果路径不对或者驱动不对则为 false
 func (fmg *FileManager) IsFile(relativePath string) bool {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return false
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	ok, _ := fs.IsFile(relativePath)
 	return ok
@@ -125,6 +168,10 @@ func (fmg *FileManager) IsFile(relativePath string) bool {
 
 // IsExist 是否存在, 如果路径不对或者驱动不对则为 false
 func (fmg *FileManager) IsExist(relativePath string) bool {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return false
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	ok, _ := fs.IsExist(relativePath)
 	return ok
@@ -132,18 +179,30 @@ func (fmg *FileManager) IsExist(relativePath string) bool {
 
 // GetFileSize 获取文件大小
 func (fmg *FileManager) GetFileSize(relativePath string) (int64, error) {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return -1, err
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	return fs.GetFileSize(relativePath)
 }
 
 // GetDirList 获取文件夹列表
 func (fmg *FileManager) GetDirList(relativePath string) ([]string, error) {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return make([]string, 0), err
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	return fs.GetDirList(relativePath)
 }
 
 // GetDirListInfo 获取文件夹下文件的基本信息
 func (fmg *FileManager) GetDirListInfo(relativePath string) ([]FsInfo, error) {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return make([]FsInfo, 0), err
+	}
 	fs := fmg.mt.getInterface(relativePath)
 	ls, err := fs.GetDirList(relativePath)
 	lenLS := len(ls)
@@ -180,7 +239,27 @@ func (fmg *FileManager) GetDirListInfo(relativePath string) ([]FsInfo, error) {
 	}
 	mLS := fmg.mt.findMountChild(relativePath)
 	if len(mLS) > 0 {
-		folders = baseInfoMerge(folders, mLS)
+		for _, val := range mLS {
+			existedIndex := -1
+			for lsi, lsVal := range ls {
+				if lsVal == val {
+					existedIndex = lsi
+				}
+			}
+			if existedIndex == -1 {
+				childPath := val
+				if relativePath != "/" {
+					childPath = relativePath + childPath
+				}
+				mtfs := fmg.mt.getInterface(childPath)
+				folders = append(folders, FsInfo{
+					childPath,
+					(func() int64 { res, _ := mtfs.GetModifyTime(childPath); return res })(),
+					false,
+					0,
+				})
+			}
+		}
 	}
 	// 把文件夹排到前面去
 	lenFiles := len(files)
@@ -199,26 +278,16 @@ func (fmg *FileManager) GetDirListInfo(relativePath string) ([]FsInfo, error) {
 	return res, err
 }
 
-// baseInfoMerge 合并挂载路径到返回结果中去
-func baseInfoMerge(x []FsInfo, y []string) []FsInfo {
-	xlen := len(x) //x数组的长度
-	z := make([]FsInfo, xlen)
-	// x
-	for i, val := range x {
-		z[i] = val
+// checkPathSafety 路径合规检查, 避免 ../ ./之类的路径
+func checkPathSafety(path string) (string, error) {
+	if len(path) == 0 {
+		return "/", nil
 	}
-	// y
-	for _, val := range y {
-		has := false
-		for _, val1 := range x {
-			if val1.Path == val {
-				has = true
-				break
-			}
-		}
-		if !has {
-			z = append(z, FsInfo{val, 0, false, 0})
-		}
+	if strings.Index(path, "../") > -1 {
+		return "", errors.New("Unsupported path format '../'")
 	}
-	return z
+	if strings.Index(path, "./") > -1 {
+		return "", errors.New("Unsupported path format './'")
+	}
+	return strtool.Parse2UnixPath(path), nil
 }

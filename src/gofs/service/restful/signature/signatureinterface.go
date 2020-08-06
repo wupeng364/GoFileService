@@ -15,7 +15,7 @@ type signature interface {
 	SignatureInitial() error
 	// 生成访问令牌, 返回AccessToken
 	GenerateAccessToken(userID string, singnatureType SingnatureType) (AccessToken, error)
-	// 验证签名是否有效, 通过accessKey查找SecretKey, 通过MD5(SecretKey+requestparameter)==sign校验参数
+	// 验证签名是否有效, 通过accessKey查找SecretKey, 通过MD5(requestparameter+SecretKey)==sign校验参数
 	VerificationSignature(accessKey, sign string, requestparameter string) bool
 	// 销毁签名, 使其无效
 	DestroySignature(accessKey string) error
