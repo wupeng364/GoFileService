@@ -16,8 +16,8 @@
 		root.$apitools = factory();
 	}
 }(this, function ( ){
-
-	var apitools = {
+	"use strict";
+	let apitools = {
 		_Const: {
 			ack: "access_object",
 			host: "access_host",
@@ -48,6 +48,9 @@
 		getSignAPIURL: function (url, params) {
 			if(!params){ params = {}; }
 			let session = apitools.getSession( );
+			if(!session||!session.SecretKey||!session.AccessKey){
+				this.apiResponseStautsHandler({Code: 401});return;
+			}
 			// 去除无效字段
 			let paramsmap = new Map( );
 			for(let key in params){
@@ -76,18 +79,18 @@
 		 * Api自动签名请求
 		 */
 		apiRequest: function(opt){
-			var session = apitools.getSession( );
+			let session = apitools.getSession( );
 			opt.session = session;
 			if(!session||!session.SecretKey||!session.AccessKey){
-				throw new Error("Signature is empty");
+				this.apiResponseStautsHandler({Code: 401});return;
 			}
 			if(this._Const.hosturi && this._Const.hosturi.length > 0){
 				if(!opt.uri.startWith('http://') && !opt.uri.startWith('https://')){
 					opt.uri = this._Const.hosturi + opt.uri;
 				}
 			}
-			var request = $utils.AjaxRequest( opt );
-			var signPayload = request.payload.payload;
+			let request = $utils.AjaxRequest( opt );
+			let signPayload = request.payload.payload;
 			if(signPayload&&signPayload.length>0){
 				signPayload += opt.session.SecretKey;
 			}else{
@@ -101,7 +104,7 @@
 		 * 相应结构格式化
 		 */
 		apiResponseFormat: function(xhr){
-			var result = {
+			let result = {
 				Code: 0,
 				Data: '',
 			};
@@ -110,7 +113,7 @@
 			// 	result.Code = xhr.status;
 			// 	result.Data = xhr.statusText;
 			// }else{
-				var _obj = {};
+				let _obj = {};
 				if( undefined != xhr.responseText ){
 					if( $utils.isString(xhr.responseText) ){
 						try{
@@ -154,7 +157,7 @@
 					datas: datas,				
 				}).do(function(xhr, opt){
 					if(xhr.readyState === 4){
-						var res = apitools.apiResponseFormat(xhr);
+						let res = apitools.apiResponseFormat(xhr);
 						if( res.Code === 200 ){
 							resolve( res.Data );
 						}else{
@@ -175,7 +178,7 @@
 					datas: datas,				
 				}).do(function(xhr, opt){
 					if(xhr.readyState === 4){
-						var res = apitools.apiResponseFormat(xhr);
+						let res = apitools.apiResponseFormat(xhr);
 						if( res.Code === 200 ){
 							resolve( res.Data );
 						}else{
@@ -193,7 +196,7 @@
 				async: false,			
 			}).do(function(xhr, opt){
 				if(xhr.readyState === 4){
-					var res = apitools.apiResponseFormat(xhr);
+					let res = apitools.apiResponseFormat(xhr);
 					if( res.Code === 200 ){
 						return res.Data;
 					}else{

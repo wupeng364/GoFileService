@@ -9,7 +9,6 @@
 
 // 通用工具集: 对象合并, 字符转换|生成, 时间转换, DOM操作, HTTP请求, 文件上传
 
-
 ;(function (root, factory) {
 	if (typeof exports === "object") {
 		module.exports = exports = factory();
@@ -18,6 +17,7 @@
 		root.$utils = factory();
 	}
 }(this, function ( ){
+	"use strict";
 
 	// utils 导出对象, 每个分类通过 utils.extendAttrs 函数拓展, 可以根据需要来加载部分类别函数
 	let utils = {

@@ -9,19 +9,24 @@
 
 // 附加在 $utils 上的属性
 ;(function (root, factory) {
-	if( root.$utils && root.$utils.extendAttrs ){
-		root.$utils.extendAttrs(root.$utils, factory( ));
-	}else{
-		root.$utils = factory( );
+	if (typeof exports === "object") {
+		module.exports = exports = factory();
+	}else {
+		if( root.$utils && root.$utils.extendAttrs ){
+			root.$utils.extendAttrs(root.$utils, factory( ));
+		}else{
+			root.$utils = factory( );
+		}
 	}
 }(this, function ( ){
-	var utils = {
+	"use strict";
+	let utils = {
 		// 获取图标URL
 		iconUrl:function(path){
-			var icons = ["ai","avi","bmp","catdrawing","catpart","catproduct","cdr","csv","doc","docx","dps","dpt","dwg","eio","eml","et","ett","exb","exe","file","flv","fold","gif","htm","html","jpeg","jpg","mht","mhtml","mid","mp3","mp4","mpeg","msg","odp","ods","odt","pdf","png","pps","ppt","pptx","prt","psd","rar","rm","rmvb","rtf","sldprt","swf","tif","txt","url","wav","wma","wmv","wps","wpt","xls","xlsx","zip"];
+			let icons = ["ai","avi","bmp","catdrawing","catpart","catproduct","cdr","csv","doc","docx","dps","dpt","dwg","eio","eml","et","ett","exb","exe","file","flv","fold","gif","htm","html","jpeg","jpg","mht","mhtml","mid","mp3","mp4","mpeg","msg","odp","ods","odt","pdf","png","pps","ppt","pptx","prt","psd","rar","rm","rmvb","rtf","sldprt","swf","tif","txt","url","wav","wma","wmv","wps","wpt","xls","xlsx","zip"];
 			if(path){
-				var type = path.substring(path.lastIndexOf(".")+1).toLowerCase();				
-				for(var i=0;i<icons.length;i++){
+				let type = path.substring(path.lastIndexOf(".")+1).toLowerCase();				
+				for(let i=0;i<icons.length;i++){
 					if(icons[i] == type ){
 						return "/img/file_icons/"+type+".png";
 					}
