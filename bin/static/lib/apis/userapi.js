@@ -25,7 +25,7 @@
 	api.login = function(user, pwd){
 		return new Promise(function(resolve, reject){
 			$utils.AjaxRequest({
-				uri: $apitools.buildAPIURL("/userapi/checkpwd"),
+				uri: $apitools.buildAPIURL("/user/checkpwd"),
 				datas: {
 					"userid": user,
 					"pwd": pwd,
@@ -44,35 +44,35 @@
 	};
 	// logout
 	api.logout = function( ){
-		return $apitools.apiPost("/userapi/logout")
+		return $apitools.apiPost("/user/logout")
 	};
 	// QueryUser
 	api.queryuser = function( userid ){
-		return $apitools.apiPost("/userapi/queryuser", {
+		return $apitools.apiPost("/user/queryuser", {
 			"userid": userid
 		})
 	};
 	// UpdateUserName
 	api.updateUserName = function( userid, username){
-		return $apitools.apiPost("/userapi/updateusername", {
+		return $apitools.apiPost("/user/updateusername", {
 			"userid": userid,
 			"username": username,
 		})
 	};
 	// UpdateUserPwd
 	api.updateUserPwd = function( userid, userpwd){
-		return $apitools.apiPost("/userapi/updateuserpwd", {
+		return $apitools.apiPost("/user/updateuserpwd", {
 			"userid": userid,
 			"userpwd": userpwd,
 		})
 	};
 	// ListAllUsers
 	api.listAllUsers = function( userid, userpwd){
-		return $apitools.apiPost("/userapi/listallusers", { })
+		return $apitools.apiPost("/user/listallusers", { })
 	};
 	// AddUser
 	api.addUser = function( userid, username, userpwd){
-		return $apitools.apiPost("/userapi/adduser", {
+		return $apitools.apiPost("/user/adduser", {
 			'userid': userid,
 			'username': username,
 			'userpwd': userpwd?userpwd:'',
@@ -80,27 +80,27 @@
 	};
 	// DelUser
 	api.delUser = function( userid){
-		return $apitools.apiPost("/userapi/deluser", {
+		return $apitools.apiPost("/user/deluser", {
 			'userid': userid,
 		 })
 	};
 	// UpdateUserName
 	api.sync.updateUserName = function( userid, username){
-		return $apitools.apiPostSync("/userapi/updateusername", {
+		return $apitools.apiPostSync("/user/updateusername", {
 			"userid": userid,
 			"username": username,
 		})
 	};
 	// UpdateUserPwd
 	api.sync.updateUserPwd = function( userid, userpwd){
-		return $apitools.apiPostSync("/userapi/updateuserpwd", {
+		return $apitools.apiPostSync("/user/updateuserpwd", {
 			"userid": userid,
 			"userpwd": userpwd,
 		})
 	};
 	// DelUser
 	api.sync.delUser = function( userid){
-		return $apitools.apiPostSync("/userapi/deluser", {
+		return $apitools.apiPostSync("/user/deluser", {
 			'userid': userid,
 		 })
 	};

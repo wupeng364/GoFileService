@@ -145,6 +145,9 @@
 					res.Data = "登录过期,请刷新页面";
 					(top.location||window.location).href = "/";
 				}
+				else if(res.Code == 403){
+					res.Data = "请求被禁止,可能是权限不足";
+				}
 			}
 		},
 		/**
