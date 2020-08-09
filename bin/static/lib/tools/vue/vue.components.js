@@ -19,7 +19,7 @@
 	Vue.component("fs-copyfile", {
 		props: ["show-dailog", "src-paths", "dest-path", "copy-settings"],
 		data: function( ){
-			var self = this;
+			let _ = this;
 			return {
 				operations:{
 					stop: "discontinue",
@@ -93,20 +93,20 @@
 		},
 		methods: {
 			doCopy: function( ){
-				var self = this;
+				let _ = this;
 				if( this.operationData.srcPaths && this.operationData.srcPaths.length > 0){
-					var tempSrc = this.operationData.srcPaths[this.operationData.srcPaths.length-1];
-					var tempDst = this.operationData.destPath+"/"+tempSrc.Path.getName( ).parsePath( );
+					let tempSrc = this.operationData.srcPaths[this.operationData.srcPaths.length-1];
+					let tempDst = this.operationData.destPath+"/"+tempSrc.Path.getName( ).parsePath( );
 					$fsApi.CopyAsync(tempSrc.Path, tempDst, this.copySettings.replace, this.copySettings.ignore).then(function( data ){
-						if( self.operationData.srcPaths.length > 1 ){
-							self.operationData.srcPaths = self.operationData.srcPaths.slice(0, self.operationData.srcPaths.length-1);
+						if( _.operationData.srcPaths.length > 1 ){
+							_.operationData.srcPaths = _.operationData.srcPaths.slice(0, _.operationData.srcPaths.length-1);
 						}else{
-							self.operationData.srcPaths = [];
+							_.operationData.srcPaths = [];
 						}
-						self.operationData.token = data;
+						_.operationData.token = data;
 					}).catch(function( err ){
-						self.$Message.error(err.toString( ));
-						self.$emit("on-error");
+						_.$Message.error(err.toString( ));
+						_.$emit("on-error");
 					});
 				}
 			},
@@ -114,8 +114,8 @@
 				if( !this.operationData.token || this.operationData.token == "" ){
 					return;
 				}
-				var self = this;
-				$fsApi.BatchOperationTokenInfo(this.operationData.token).then(function(data){
+				let _ = this;
+				$fsApi.AsyncExecToken("CopyFile", this.operationData.token).then(function(data){
 					/*
 						{
 							"CountIndex":7,
@@ -135,54 +135,54 @@
 					data = JSON.parse(data);
 					// console.log( data )
 					if( data.CountIndex > 0 ){
-						self.operationData.opCount = data.CountIndex;
+						_.operationData.opCount = data.CountIndex;
 					}
 					if(data.IsComplete){
-						self.operationData.token = "";
+						_.operationData.token = "";
 						if( data.IsDiscontinue ){
-							self.showDailog = false;
-							self.$Message.error("复制已终止")
-							self.$emit("on-stop");
+							_.showDailog = false;
+							_.$Message.error("复制已终止")
+							_.$emit("on-stop");
 						}else{
-							if( !self.operationData.srcPaths || self.operationData.srcPaths.length == 0 ){
-								self.showDailog = false;
+							if( !_.operationData.srcPaths || _.operationData.srcPaths.length == 0 ){
+								_.showDailog = false;
 								if( data.ErrorString && data.ErrorString.length > 0 ){
-									self.$Message.error(data.ErrorString);
+									_.$Message.error(data.ErrorString);
 								}else{
-									self.$Message.success("复制完成");
+									_.$Message.success("复制完成");
 								}
-								self.$emit("on-end");
+								_.$emit("on-end");
 							}else{
-								self.operationData.multiCount += self.operationData.opCount;
-								self.doCopy( );
+								_.operationData.multiCount += _.operationData.opCount;
+								_.doCopy( );
 							}
 						}
 						return;
 					}
-					self.operationData.nowSrcPath = data.Src;
-					self.operationData.nowDstPath = data.Dst;
+					_.operationData.nowSrcPath = data.Src;
+					_.operationData.nowDstPath = data.Dst;
 					// 
-					self.copyError.IsError = (data.ErrorString&&data.ErrorString.length>0)?true:false;
-					self.copyError.Error = self.parseError(data);
-					self.copyError.IsExist = data.IsDstExist;
+					_.copyError.IsError = (data.ErrorString&&data.ErrorString.length>0)?true:false;
+					_.copyError.Error = _.parseError(data);
+					_.copyError.IsExist = data.IsDstExist;
 					setTimeout(function( ){
-						self.doRefreshPs( );
+						_.doRefreshPs( );
 					}, 100);
 
 				}).catch(function( err ){
-					self.$Message.error(err.toString( ));
+					_.$Message.error(err.toString( ));
 				});
 			},
 			doStop: function( ){
 				if( this.operationData.token && this.operationData.token.length > 0 ){
-					var self = this;
-					$fsApi.SetBatchOperationToken(this.operationData.token, this.operations.stop).then(function(data){
-						self.operationData.opCount  = 0;
-						self.operationData.multiCount  = 0;
-						self.operationData.srcPaths = [];
-						self.operationData.destPath = [];
+					let _ = this;
+					$fsApi.AsyncExecToken("CopyFile", this.operationData.token, {operation: this.operations.stop}).then(function(data){
+						_.operationData.opCount  = 0;
+						_.operationData.multiCount  = 0;
+						_.operationData.srcPaths = [];
+						_.operationData.destPath = [];
 					}).catch(function( err ){
-						self.$Message.error(err.toString( ));
+						_.$Message.error(err.toString( ));
 					});
 				}
 			},
@@ -190,22 +190,22 @@
 				if( !this.operationData.token || this.operationData.token == "" ){
 					return;
 				}
-				var self = this;
-				$fsApi.SetBatchOperationToken(this.operationData.token, this.copySettings.ignore?this.operations.ignoreall:this.operations.ignore).then(function(data){
+				let _ = this;
+				$fsApi.AsyncExecToken("CopyFile", this.operationData.token, {operation: this.copySettings.ignore?this.operations.ignoreall:this.operations.ignore}).then(function(data){
 					// console.log(data);
 				}).catch(function( err ){
-					self.$Message.error(err.toString( ));
+					_.$Message.error(err.toString( ));
 				});
 			},
 			doReplace: function( ){
 				if( !this.operationData.token || this.operationData.token == "" ){
 					return;
 				}
-				var self = this;
-				$fsApi.SetBatchOperationToken(this.operationData.token, this.copySettings.replace?this.operations.replaceall:this.operations.replace).then(function(data){
+				let _ = this;
+				$fsApi.AsyncExecToken("CopyFile", this.operationData.token, {operation: this.copySettings.replace?this.operations.replaceall:this.operations.replace}).then(function(data){
 					// console.log(data);
 				}).catch(function( err ){
-					self.$Message.error(err.toString( ));
+					_.$Message.error(err.toString( ));
 				});
 			},
 			parseError: function( data ){
@@ -250,7 +250,7 @@
 	Vue.component("fs-movefile", {
 		props: ["show-dailog", "src-paths", "dest-path", "move-settings"],
 		data: function( ){
-			var self = this;
+			let _ = this;
 			return {
 				operations:{
 					stop: "discontinue",
@@ -324,20 +324,20 @@
 		},
 		methods: {
 			doMove: function( ){
-				var self = this;
+				let _ = this;
 				if( this.operationData.srcPaths && this.operationData.srcPaths.length > 0){
-					var tempSrc = this.operationData.srcPaths[this.operationData.srcPaths.length-1];
-					var tempDst = this.operationData.destPath+"/"+tempSrc.Path.getName( ).parsePath( );
+					let tempSrc = this.operationData.srcPaths[this.operationData.srcPaths.length-1];
+					let tempDst = this.operationData.destPath+"/"+tempSrc.Path.getName( ).parsePath( );
 					$fsApi.MoveAsync(tempSrc.Path, tempDst, this.moveSettings.replace, this.moveSettings.ignore).then(function( data ){
-						if( self.operationData.srcPaths.length > 1 ){
-							self.operationData.srcPaths = self.operationData.srcPaths.slice(0, self.operationData.srcPaths.length-1);
+						if( _.operationData.srcPaths.length > 1 ){
+							_.operationData.srcPaths = _.operationData.srcPaths.slice(0, _.operationData.srcPaths.length-1);
 						}else{
-							self.operationData.srcPaths = [];
+							_.operationData.srcPaths = [];
 						}
-						self.operationData.token = data;
+						_.operationData.token = data;
 					}).catch(function( err ){
-						self.$Message.error(err.toString( ));
-						self.$emit("on-error");
+						_.$Message.error(err.toString( ));
+						_.$emit("on-error");
 					});
 				}
 			},
@@ -345,8 +345,8 @@
 				if( !this.operationData.token || this.operationData.token == "" ){
 					return;
 				}
-				var self = this;
-				$fsApi.BatchOperationTokenInfo(this.operationData.token).then(function(data){
+				let _ = this;
+				$fsApi.AsyncExecToken("MoveFile",this.operationData.token).then(function(data){
 					/*
 						{
 							"CountIndex":7,
@@ -366,54 +366,54 @@
 					data = JSON.parse(data);
 					// console.log( data )
 					if( data.CountIndex > 0 ){
-						self.operationData.opCount = data.CountIndex;
+						_.operationData.opCount = data.CountIndex;
 					}
 					if(data.IsComplete){
-						self.operationData.token = "";
+						_.operationData.token = "";
 						if( data.IsDiscontinue ){
-							self.showDailog = false;
-							self.$Message.error("移动已终止")
-							self.$emit("on-stop");
+							_.showDailog = false;
+							_.$Message.error("移动已终止")
+							_.$emit("on-stop");
 						}else{
-							if( !self.operationData.srcPaths || self.operationData.srcPaths.length == 0 ){
-								self.showDailog = false;
+							if( !_.operationData.srcPaths || _.operationData.srcPaths.length == 0 ){
+								_.showDailog = false;
 								if( data.ErrorString && data.ErrorString.length > 0 ){
-									self.$Message.error(data.ErrorString);
+									_.$Message.error(data.ErrorString);
 								}else{
-									self.$Message.success("移动完成");
+									_.$Message.success("移动完成");
 								}
-								self.$emit("on-end");
+								_.$emit("on-end");
 							}else{
-								self.operationData.multiCount += self.operationData.opCount;
-								self.doMove( );
+								_.operationData.multiCount += _.operationData.opCount;
+								_.doMove( );
 							}
 						}
 						return;
 					}
-					self.operationData.nowSrcPath = data.Src;
-					self.operationData.nowDstPath = data.Dst;
+					_.operationData.nowSrcPath = data.Src;
+					_.operationData.nowDstPath = data.Dst;
 					// 
-					self.moveError.IsError = (data.ErrorString&&data.ErrorString.length>0)?true:false;
-					self.moveError.Error = self.parseError(data);
-					self.moveError.IsExist = data.IsDstExist;
+					_.moveError.IsError = (data.ErrorString&&data.ErrorString.length>0)?true:false;
+					_.moveError.Error = _.parseError(data);
+					_.moveError.IsExist = data.IsDstExist;
 					setTimeout(function( ){
-						self.doRefreshPs( );
+						_.doRefreshPs( );
 					}, 100);
 
 				}).catch(function( err ){
-					self.$Message.error(err.toString( ));
+					_.$Message.error(err.toString( ));
 				});
 			},
 			doStop: function( ){
 				if( this.operationData.token && this.operationData.token.length > 0 ){
-					var self = this;
-					$fsApi.SetBatchOperationToken(this.operationData.token, this.operations.stop).then(function(data){
-						self.operationData.opCount  = 0;
-						self.operationData.multiCount  = 0;
-						self.operationData.srcPaths = [];
-						self.operationData.destPath = [];
+					let _ = this;
+					$fsApi.AsyncExecToken("MoveFile", this.operationData.token, {operation: this.operations.stop}).then(function(data){
+						_.operationData.opCount  = 0;
+						_.operationData.multiCount  = 0;
+						_.operationData.srcPaths = [];
+						_.operationData.destPath = [];
 					}).catch(function( err ){
-						self.$Message.error(err.toString( ));
+						_.$Message.error(err.toString( ));
 					});
 				}
 			},
@@ -421,22 +421,22 @@
 				if( !this.operationData.token || this.operationData.token == "" ){
 					return;
 				}
-				var self = this;
-				$fsApi.SetBatchOperationToken(this.operationData.token, this.moveSettings.ignore?this.operations.ignoreall:this.operations.ignore).then(function(data){
+				let _ = this;
+				$fsApi.AsyncExecToken("MoveFile", this.operationData.token, {operation: this.moveSettings.ignore?this.operations.ignoreall:this.operations.ignore}).then(function(data){
 					// console.log(data);
 				}).catch(function( err ){
-					self.$Message.error(err.toString( ));
+					_.$Message.error(err.toString( ));
 				});
 			},
 			doReplace: function( ){
 				if( !this.operationData.token || this.operationData.token == "" ){
 					return;
 				}
-				var self = this;
-				$fsApi.SetBatchOperationToken(this.operationData.token, this.moveSettings.replace?this.operations.replaceall:this.operations.replace).then(function(data){
+				let _ = this;
+				$fsApi.AsyncExecToken("MoveFile", this.operationData.token, {operation: this.moveSettings.replace?this.operations.replaceall:this.operations.replace}).then(function(data){
 					// console.log(data);
 				}).catch(function( err ){
-					self.$Message.error(err.toString( ));
+					_.$Message.error(err.toString( ));
 				});
 			},
 			parseError: function( data ){
@@ -481,7 +481,7 @@
 	Vue.component("fs-selector", {
 		props:["show-dailog", "settings", "start-path", "select-muti", "select-file", "select-dir"],
 		data: function( ){
-			var self = this;
+			let _ = this;
 			return{
 				isSelectFile: false,
 				isSelectDir: false,
@@ -506,20 +506,20 @@
 								},
 								on: {
 									'on-change': function(val){
-										self.fsStatus.fsLoading = true;
-										if( !self.isSelectMuti ){
-											for(var i=0; i<self.fsData.length; i++ ){
+										_.fsStatus.fsLoading = true;
+										if( !_.isSelectMuti ){
+											for(let i=0; i<_.fsData.length; i++ ){
 												if( i == params.index ){ continue; }
-												self.fsData[i]['_checked'] = false;
+												_.fsData[i]['_checked'] = false;
 											}
 										}
-										self.$set(self.fsData[params.index], '_checked', val);
+										_.$set(_.fsData[params.index], '_checked', val);
 										if(val){
-											self.putSelect(params.row);
+											_.putSelect(params.row);
 										}else{
-											self.removeSelect(params.row);
+											_.removeSelect(params.row);
 										}
-										self.fsStatus.fsLoading = false;
+										_.fsStatus.fsLoading = false;
 									}                                    
 								}
 							});
@@ -535,7 +535,7 @@
 									isEditor:false
 								},
 								on:{
-									click: self.doOpenDir
+									click: _.doOpenDir
 								}
 							});
 						}
@@ -553,12 +553,12 @@
 				selectedDates: [],
 			}
 		},
-		template:"<Modal v-model=\"showDailog\" :closable=\"false\" :mask-closable=\"false\" :width=\"fsSettings.width\"  @on-ok=\"even_ok\" @on-cancel=\"even_cancel\">"+
-				"<div style=\"height: 30px;line-height: 30px;padding-left:5px;\">"+
-					"<fs-address v-if=\"fsStatus.loadedPath&&fsStatus.loadedPath.length>0\" :depth=\"4\" :rootname=\"fsSettings.rootname\" :path=\"fsStatus.loadedPath\" @click=\"goToPath\"></fs-address>"+
-				"</div>"+
-				"<i-table :loading=\"fsStatus.fsLoading\" :columns=\"fsColumns\" :data=\"fsData\" :height=\"fsSettings.height\" @on-row-click=\"onRowClick\" @on-selection-change=\"onSelectionChange\" ></i-table>"+
-			"</Modal>",
+		template:"<Modal v-model=\"showDailog\" :title=\"selectFile?'选择文件':'选择目录'\" :width=\"fsSettings.width\" @on-ok=\"onOk\" @on-cancel=\"onCancel\">"+
+				"	<div style=\"height: 30px;line-height: 30px;padding-left:5px;\">"+
+				"		<fs-address v-if=\"fsStatus.loadedPath&&fsStatus.loadedPath.length>0\" :depth=\"4\" :rootname=\"fsSettings.rootname\" :path=\"fsStatus.loadedPath\" @click=\"goToPath\"></fs-address>"+
+				"	</div>"+
+				"	<i-table :loading=\"fsStatus.fsLoading\" :columns=\"fsColumns\" :data=\"fsData\" :height=\"fsSettings.height\" @on-row-click=\"onRowClick\" @on-selection-change=\"onSelectionChange\" ></i-table>"+
+			    "</Modal>",
 		created: function( ){
 			
 		},
@@ -589,10 +589,10 @@
 					this.goToPath( node.Path )
 				}
 			},
-			even_ok: function( ){
+			onOk: function( ){
 				this.fsStatus.fsLoading = true;
 				if( this.fsData ){
-					for(var i=0; i<this.fsData.length; i++){
+					for(let i=0; i<this.fsData.length; i++){
 						this.fsData[i]["_checked"] = false;
 					}
 				}
@@ -602,11 +602,11 @@
 					"IsFile": false
 				}]:[]));
 			},
-			even_cancel: function( ){
+			onCancel: function( ){
 				this.$emit("on-cancel");
 			},
 			onRowClick: function(row, index){
-			for (var i = 0; i < this.fsData.length; i++) {
+			for (let i = 0; i < this.fsData.length; i++) {
 				if( this.fsData[i]._checked && index != i ){
 				this.$set( this.fsData[i], "_checked", false);
 				}
@@ -618,7 +618,7 @@
 				if(!this.isSelectMuti){ 
 					this.selectedDates = [row];
 				}else{
-					for(var i=0; i<this.selectedDates.length; i++){
+					for(let i=0; i<this.selectedDates.length; i++){
 						if(this.selectedDates[i].Path == row.Path){
 							return;
 						}
@@ -627,7 +627,7 @@
 				}
 			},
 			removeSelect: function( row ){
-				for(var i = this.selectedDates.length - 1; i >= 0; i--){
+				for(let i = this.selectedDates.length - 1; i >= 0; i--){
 					if( this.selectedDates[i].Path == row.Path ){
 						this.selectedDates.remove( i );
 					}
@@ -647,21 +647,21 @@
 			},
 			'fsStatus.loadedPath': function(n, o){
 				if( !n ){ return; }
-				var self = this;
+				let _ = this;
 				$fsApi.List(n).then(function( data ){
 					data = JSON.parse(data);
-					self.fsData = [];
-					self.selectedDates = [];
-					for(var i=0; i<data.length; i++){
-						if( (self.isSelectFile && data[i].IsFile) || (self.isSelectDir && !data[i].IsFile) ){
+					_.fsData = [];
+					_.selectedDates = [];
+					for(let i=0; i<data.length; i++){
+						if( (_.isSelectFile && data[i].IsFile) || (_.isSelectDir && !data[i].IsFile) ){
 							data[i]["_checked"] = false;
-							self.fsData.push( data[i] );
+							_.fsData.push( data[i] );
 						}
 					}
-					self.fsStatus.fsLoading = false;
+					_.fsStatus.fsLoading = false;
 				}).catch(function(err){
-					self.fsStatus.fsLoading = false;
-					self.$Message.error(err.toString( ));
+					_.fsStatus.fsLoading = false;
+					_.$Message.error(err.toString( ));
 				});
 			},
 		}
@@ -698,7 +698,7 @@
 				this.$emit("click", this.root?this.root:"/");
 			},
 			address_GoToPath:function(item, index){
-				var path = "";
+				let path = "";
 				for( i=0; i<=index; i++ ){
 					if( this.paths[i] ){
 						path += "/"+this.paths[i];
@@ -726,7 +726,7 @@
 		template:"<div style='width:100%;'>"+
 					"<div style='overflow: hidden;text-overflow:ellipsis;white-space:nowrap;'>"+
 						"<img :src=\"icon\" style='vertical-align:middle;margin-right:10px;width:32px;height:32px'>"+
-						"<i-input v-if=\"isEditor\" v-model='filename' style='width:200px' @on-enter=\"doSave\"></i-input>"+
+						"<i-input v-if=\"isEditor\" v-model='filename' style='width: calc(100% - 45px);' @on-enter=\"doSave\"></i-input>"+
 						"<span v-else style='cursor:pointer' @click=\"doClick\" :title='filename'>{{filename}}</span>"+
 					"</div>"+
 				"</div>",		
@@ -755,7 +755,7 @@
 			}
 		},	
 		created:function(){
-			var that = this;
+			let that = this;
 			this.initvalue( );
 			this.$nextTick(function (){
 				window.addEventListener("keydown",function(e){
@@ -768,7 +768,7 @@
 				});
 
 				window.addEventListener("mousedown",function(e){
-					var dom = e.target;
+					let dom = e.target;
 					if(dom == that.$el.querySelector("input") ){					
 					}else{
 						that.doSave();
@@ -782,6 +782,185 @@
 				deep:true,
 				handler:function(newval,oldval){									
 					this.initvalue();
+				}
+			}
+		}
+	});
+	// 文件上传
+	Vue.component("fs-upload",{
+		props:["show-drawer", "parent", "drag-ref"],
+		data:function(){
+			return{
+				maxuploading: 5, // 最大正在上传的个数
+				uploading: 0,    // 正在上传的个数
+				uploadend: true, // 上传结束
+				dindex: 0,       // 当前数据下标
+				files: [],       // 文件
+			}
+		},
+		template:"<Drawer title=\"上传文件\" width=\"450px\" v-model=\"showDrawer\" @on-close=\"$emit('on-close')\">" + 
+		"		  		<div class=\"ivu-upload\">" + 
+		"		  			<div class=\"ivu-upload ivu-upload-drag\" ref=\"uploadDrag\" @click=\"doSelectFiels\">" + 
+		"		  				<input ref=\"upload_selector_file\" type=\"file\" multiple=\"multiple\" class=\"ivu-upload-input\">" + 
+		"		  				<div style=\"padding: 20px 0px;\">" + 
+		"		  				<i class=\"ivu-icon ivu-icon-ios-cloud-upload\" style=\"font-size: 52px; color: rgb(51, 153, 255);\"></i>" + 
+		"		  				<p>点击或拖拽到此处</p>" + 
+		"		  				</div>" + 
+		"		  			</div> " + 
+		"		  			<ul class=\"ivu-upload-list\">" + 
+		"		  				<li v-for=\"temp in files\" v-if=\"!temp._upload.removed\" class=\"ivu-upload-list-file\">" + 
+		"		  				<span>{{temp.name}}</span>" + 
+		"		  				<i class=\"ivu-icon ivu-icon-ios-close ivu-upload-list-remove\" @click=\"removeTask(temp._upload.index)\"></i>" + 
+		"		  				<div class=\"ivu-progress ivu-progress-normal ivu-progress-show-info\">" + 
+		"		  					<div class=\"ivu-progress-outer\">" + 
+		"		  					<div class=\"ivu-progress-inner\">" + 
+		"		  						<div v-if=\"!temp._upload.ps||temp._upload.ps<100\" class=\"ivu-progress-bg\" :style=\"{width: (temp._upload.ps?temp._upload.ps:0)+'%', height: '2px'}\"></div>" + 
+		"		  						<div v-else class=\"ivu-progress-success-bg\" style=\"width: 100%; height: 2px;\"></div>" + 
+		"		  					</div>" + 
+		"		  					</div> " + 
+		"		  					<span class=\"ivu-progress-text\">" + 
+		"		  					<span :style=\"{color: temp._upload.err?'#b42525':'#515a6e'}\" class=\"ivu-progress-text-inner\">{{temp._upload.err?temp._upload.err:temp._upload.ps+'%'}}</span>" + 
+		"		  					</span>" + 
+		"		  				</div>" + 
+		"		  				</li>" + 
+		"		  			</ul>" + 
+		"		  		</div>" + 
+		"		  </Drawer>",		
+		methods:{		
+			// 上传-触发选择文件
+			doSelectFiels: function( ev ){
+				let _ = this;
+				$utils.addEvent(this.$refs.upload_selector_file, "change", function( ev_data ){
+					if( ev_data.target.files ){
+						_.uploadend = false;
+						for(let i = 0; i < ev_data.target.files.length; i++){
+							let fs = ev_data.target.files[i];
+							fs._upload = {
+								base: _.parent,
+								index: _.files.length,
+								updater: false,
+								ps: 0,
+							};
+							_.files.push( fs );
+							_.doStartUpload( );
+						}
+					}
+					_.$refs.upload_selector_file.value = "";
+				}, {once: true});
+				$utils.triggerMouseEvent(this.$refs.upload_selector_file, "click");
+			},
+			// 上传-触发上传动作
+			doStartUpload: function( ){
+				if( this.files && this.files.length > 0 ){
+					if( this.uploading >= this.maxuploading){
+						return;
+					}
+					if(this.uploadend || this.dindex >= this.files.length){
+						this.uploadend = true; return;
+					}
+					this.uploading ++;
+					let file = this.files[this.dindex++];
+					if( file._upload.removed ){
+						this.uploading --;
+						this.$nextTick(this.doStartUpload);
+						return;
+					}
+					// file._upload.index = this.dindex-1;
+					let _ = this;
+					let opts = {
+						form: { },
+						header: { },
+						progress: function( e ){
+							// 数据源为数组, 需要直接设置数组
+							file._upload.ps = Math.round((e.loaded/e.total)*1000)/10;
+							_.$set(_.files, file._upload.index, file);
+						},
+						error: function( e ){
+							file._upload.err = e?e.toString():"上传失败";
+							_.$set(_.files, file._upload.index, file);
+						},
+						abort: function( e ){
+							file._upload.err = "上传取消";
+							_.$set(_.files, file._upload.index, file);
+						},
+						loadstart: function( e ){ },
+						loadend: function( e ){
+							_.uploading--;
+							file._upload.ended = true;
+							_.$nextTick(function( ){
+								_.doStartUpload( );
+								//_.removeTask(file._upload.index);
+							});
+						}
+					};
+					// 预备开始
+					file._upload.started = true;
+					$fsApi.GetUploadUrl(file._upload.base+"/"+file.name).then(function(url){
+						file._upload.updater = $utils.uploadByFormData(url, file, opts);
+						file._upload.updater.start( );
+					}).catch(function(err){
+						opts.error(err);
+						opts.loadend();
+					});
+				}
+			},
+			// 上传 - 移除任务
+			removeTask: function( index ){
+				let file = this.files[index];
+				if( file ){
+					// 正在传输
+					if( !file._upload.ended && file._upload.started ){
+						file._upload.updater.abort( );
+					}
+					file._upload.removed = true;
+					this.$set(this.files, index, file);
+				}
+			},
+			// 上传 - 监听拖拽
+			doListenDrag: function( key ){
+				let _ = this;
+				this.$nextTick(function( ){
+					let obj = undefined;
+					if( key ){
+						if(_.$refs[key]){
+							obj = _.$refs[key];				
+						}else if(_.$parent && _.$parent.$refs){
+							obj = _.$parent.$refs[key];
+						}
+					}
+					if(!obj){ return; }
+					obj.ondrop = function( evn ){
+						evn.preventDefault( );
+						_.uploadend = false;
+						let fileList = evn.dataTransfer.files;
+						for(let i = 0; i < fileList.length; i++){
+							let fs = fileList[i];
+							if(!fs.type && fs.size == 0){
+								continue
+							}
+							fs._upload = {
+								base: _.parent,
+								index: _.files.length,
+								updater: false,
+								ps: 0,
+							};
+							_.files.push( fs );
+							_.doStartUpload( );
+						}
+					}
+				});
+			},
+		},	
+		created:function(){
+			this.doListenDrag('uploadDrag');
+			this.doListenDrag(this.dragRef);
+		},
+		watch:{
+			uploadend: function(n, o){
+				if(n){
+					this.$emit('on-end');
+				}else{
+					this.$emit('on-start');
 				}
 			}
 		}
