@@ -57,12 +57,12 @@ func (locl localDriver) GetDirList(relativePath string) ([]string, error) {
 	if relativePath == "/" {
 		if ls != nil && len(ls) > 0 {
 			res := make([]string, 0)
-			for _, p := range ls {
+			for i := 0; i < len(ls); i++ {
 				// 如果是挂载目录根目录, 忽略系统目录
-				if sysDir == p {
+				if sysDir == ls[i] {
 					continue
 				}
-				res = append(res, p)
+				res = append(res, ls[i])
 			}
 			return res, nil
 		}
@@ -191,14 +191,14 @@ func (locl localDriver) DoDelete(relativePath string) error {
 
 // DoClearDeletings 删除各个分区内的'临时删除文件'
 func (locl localDriver) DoClearDeletings() {
-	for _, val := range locl.mtm.mtnds {
-		if val.mtType == localTypeKey {
-			dirs, _ := fstool.GetDirList(val.mtAddr + "/" + deletingDir)
+	for i := 0; i < len(locl.mtm.mtnds); i++ {
+		if locl.mtm.mtnds[i].mtType == localTypeKey {
+			dirs, _ := fstool.GetDirList(locl.mtm.mtnds[i].mtAddr + "/" + deletingDir)
 			if nil == dirs {
 				continue
 			}
-			for _, temp := range dirs {
-				err := fstool.RemoveAll(val.mtAddr + "/" + deletingDir + "/" + temp)
+			for j := 0; j < len(dirs); j++ {
+				err := fstool.RemoveAll(locl.mtm.mtnds[i].mtAddr + "/" + deletingDir + "/" + dirs[j])
 				if nil != err {
 					fmt.Println("DoClearDeletings", err)
 				}

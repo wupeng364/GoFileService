@@ -84,8 +84,8 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 				panic(err.Error())
 			}
 			if nil != dirs {
-				for _, temp := range dirs {
-					err = fstool.RemoveAll(strtool.Parse2UnixPath(loclTemp + "/" + temp))
+				for i := 0; i < len(dirs); i++ {
+					err = fstool.RemoveAll(strtool.Parse2UnixPath(loclTemp + "/" + dirs[i]))
 					if nil != err {
 						panic("Clear temps Failed, Error: " + err.Error())
 					}
@@ -96,8 +96,8 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 				panic(err.Error())
 			}
 			if nil != dirs {
-				for _, temp := range dirs {
-					err := fstool.RemoveAll(strtool.Parse2UnixPath(loclDeleting + "/" + temp))
+				for i := 0; i < len(dirs); i++ {
+					err := fstool.RemoveAll(strtool.Parse2UnixPath(loclDeleting + "/" + dirs[i]))
 					if nil != err {
 						panic("Clear temps Failed, Error: " + err.Error())
 					}
@@ -113,7 +113,7 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 }
 
 // getInterface 根据相对路径获取对应驱动类
-func (mtg *mountManager) getInterface(relativePath string) fmInterface {
+func (mtg *mountManager) getInterface(relativePath string) FileManage {
 	if len(strings.Replace(relativePath, " ", "", -1)) == 0 {
 		relativePath = "/"
 	}
@@ -148,16 +148,16 @@ func (mtg *mountManager) getMountItem(relativePath string) mountNodes {
 	// 如果传入路径和挂载节点匹配, 则记录下来
 	pathLen := -1
 	var recentMountNodes mountNodes
-	for _, val := range mtg.mtnds {
+	for i := 0; i < len(mtg.mtnds); i++ {
 		// 如果挂载路径再传入路径的头部, 则认为有效
 		// "/"==>/A || /A==>/A || /A/==> /A/B/
-		if "/" == val.mtPath ||
-			val.mtPath == relativePath ||
-			strings.HasPrefix(relativePath, val.mtPath+"/") {
+		if "/" == mtg.mtnds[i].mtPath ||
+			mtg.mtnds[i].mtPath == relativePath ||
+			strings.HasPrefix(relativePath, mtg.mtnds[i].mtPath+"/") {
 			// /A==>/A/B/C < /A/B==>/A/B/C
-			if pathLen < len(val.mtPath) {
-				pathLen = len(val.mtPath)
-				recentMountNodes = val
+			if pathLen < len(mtg.mtnds[i].mtPath) {
+				pathLen = len(mtg.mtnds[i].mtPath)
+				recentMountNodes = mtg.mtnds[i]
 			}
 		}
 
@@ -171,17 +171,17 @@ func (mtg *mountManager) findMountChild(relativePath string) (res []string) {
 		return res
 	}
 	depth := len(strings.Split(relativePath, "/")) // 这个地方实质上+1了
-	for _, val := range mtg.mtnds {
+	for i := 0; i < len(mtg.mtnds); i++ {
 		if relativePath == "/" {
 			// 如果为 / 则取挂载目录深度为 1 的 /==>/mount1 /mount2
-			if val.depth == 1 && val.mtPath != "/" {
-				res = append(res, val.mtPath)
+			if mtg.mtnds[i].depth == 1 && mtg.mtnds[i].mtPath != "/" {
+				res = append(res, mtg.mtnds[i].mtPath)
 			}
 		} else
 		// 其他目录则取当前目录深度加一目录&以他开头的 /ps==>/ps/mount1 /ps/mount2
-		if val.depth == depth && val.mtPath != "/" &&
-			strings.HasPrefix(val.mtPath, relativePath+"/") {
-			res = append(res, val.mtPath)
+		if mtg.mtnds[i].depth == depth && mtg.mtnds[i].mtPath != "/" &&
+			strings.HasPrefix(mtg.mtnds[i].mtPath, relativePath+"/") {
+			res = append(res, mtg.mtnds[i].mtPath)
 		}
 	}
 	return res

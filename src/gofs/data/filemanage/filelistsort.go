@@ -25,11 +25,11 @@ type FileListSorter struct {
 func (fsort FileListSorter) Sort(fis []FsInfo) []FsInfo {
 	folders := make([]FsInfo, 0)
 	files := make([]FsInfo, 0)
-	for _, val := range fis {
-		if val.IsFile {
-			files = append(files, val)
+	for i := 0; i < len(fis); i++ {
+		if fis[i].IsFile {
+			files = append(files, fis[i])
 		} else {
-			folders = append(folders, val)
+			folders = append(folders, fis[i])
 		}
 	}
 	if len(folders) > 0 {

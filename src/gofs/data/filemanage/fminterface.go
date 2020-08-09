@@ -21,8 +21,8 @@ type Reader interface {
 	Close() error
 }
 
-// fmInterface 文件管理接口
-type fmInterface interface {
+// FileManage 文件管理接口
+type FileManage interface {
 	// 状态判断
 	IsExist(relativePath string) (bool, error)
 	IsDir(relativePath string) (bool, error)

@@ -13,7 +13,7 @@ package filemanage
 
 import (
 	"errors"
-	"gofs/comm/conf"
+	"gofs/base/conf"
 	"gutils/mloader"
 	"gutils/strtool"
 	"gutils/tokentool"
@@ -77,39 +77,45 @@ func (fmg *FileManager) RemoveToken(token string) {
 	fmg.tk.DestroyToken(token)
 }
 
+// GetPathDriver GetPathDriver
+func (fmg *FileManager) GetPathDriver(relativePath string) (FileManage, error) {
+	relativePath, err := checkPathSafety(relativePath)
+	if nil != err {
+		return nil, err
+	}
+	return fmg.mt.getInterface(relativePath), nil
+}
+
 // DoRename DoRename
 func (fmg *FileManager) DoRename(relativePath, newName string) error {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return err
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoRename(relativePath, newName)
 }
 
 // DoNewFolder DoNewFolder
 func (fmg *FileManager) DoNewFolder(relativePath string) error {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return err
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoNewFolder(relativePath)
 }
 
 // DoDelete 删除文件|文件夹
 func (fmg *FileManager) DoDelete(relativePath string) error {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return err
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoDelete(relativePath)
 }
 
 // DoMove 移动文件|文件夹
 func (fmg *FileManager) DoMove(src, dest string, replace, ignore bool, callback MoveCallback) error {
-	src, err := checkPathSafety(src)
+	fs, err := fmg.GetPathDriver(src)
 	if nil != err {
 		return err
 	}
@@ -117,13 +123,12 @@ func (fmg *FileManager) DoMove(src, dest string, replace, ignore bool, callback 
 	if nil != err {
 		return err
 	}
-	fs := fmg.mt.getInterface(src)
 	return fs.DoMove(src, dest, replace, ignore, callback)
 }
 
 // DoCopy 复制文件|夹
 func (fmg *FileManager) DoCopy(src, dest string, replace, ignore bool, callback CopyCallback) error {
-	src, err := checkPathSafety(src)
+	fs, err := fmg.GetPathDriver(src)
 	if nil != err {
 		return err
 	}
@@ -131,87 +136,79 @@ func (fmg *FileManager) DoCopy(src, dest string, replace, ignore bool, callback 
 	if nil != err {
 		return err
 	}
-	fs := fmg.mt.getInterface(src)
 	return fs.DoCopy(src, dest, replace, ignore, callback)
 }
 
 // DoWrite 写入文件
 func (fmg *FileManager) DoWrite(relativePath string, ioReader io.Reader) error {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return err
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoWrite(relativePath, ioReader)
 }
 
 // DoRead 读取文件
 func (fmg *FileManager) DoRead(relativePath string, offset int64) (Reader, error) {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return nil, err
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	return fs.DoRead(relativePath, offset)
 }
 
 // IsFile 是否是文件, 如果路径不对或者驱动不对则为 false
 func (fmg *FileManager) IsFile(relativePath string) bool {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return false
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	ok, _ := fs.IsFile(relativePath)
 	return ok
 }
 
 // IsExist 是否存在, 如果路径不对或者驱动不对则为 false
 func (fmg *FileManager) IsExist(relativePath string) bool {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return false
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	ok, _ := fs.IsExist(relativePath)
 	return ok
 }
 
 // GetFileSize 获取文件大小
 func (fmg *FileManager) GetFileSize(relativePath string) (int64, error) {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return -1, err
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	return fs.GetFileSize(relativePath)
 }
 
 // GetDirList 获取文件夹列表
 func (fmg *FileManager) GetDirList(relativePath string) ([]string, error) {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return make([]string, 0), err
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	return fs.GetDirList(relativePath)
 }
 
 // GetDirListInfo 获取文件夹下文件的基本信息
 func (fmg *FileManager) GetDirListInfo(relativePath string) ([]FsInfo, error) {
-	relativePath, err := checkPathSafety(relativePath)
+	fs, err := fmg.GetPathDriver(relativePath)
 	if nil != err {
 		return make([]FsInfo, 0), err
 	}
-	fs := fmg.mt.getInterface(relativePath)
 	ls, err := fs.GetDirList(relativePath)
 	lenLS := len(ls)
 
 	files := make([]FsInfo, 0)
 	folders := make([]FsInfo, 0)
 	if err == nil && lenLS > 0 {
-		for _, p := range ls {
-			childPath := "/" + p
+		for i := 0; i < len(ls); i++ {
+			childPath := "/" + ls[i]
 			if relativePath != "/" {
 				childPath = relativePath + childPath
 			}
@@ -239,15 +236,15 @@ func (fmg *FileManager) GetDirListInfo(relativePath string) ([]FsInfo, error) {
 	}
 	mLS := fmg.mt.findMountChild(relativePath)
 	if len(mLS) > 0 {
-		for _, val := range mLS {
+		for i := 0; i < len(mLS); i++ {
 			existedIndex := -1
-			for lsi, lsVal := range ls {
-				if lsVal == val {
-					existedIndex = lsi
+			for j := 0; j < len(ls); j++ {
+				if ls[j] == mLS[i] {
+					existedIndex = j
 				}
 			}
 			if existedIndex == -1 {
-				childPath := val
+				childPath := mLS[i]
 				if relativePath != "/" {
 					childPath = relativePath + childPath
 				}
@@ -266,13 +263,13 @@ func (fmg *FileManager) GetDirListInfo(relativePath string) ([]FsInfo, error) {
 	lenFolders := len(folders)
 	res := make([]FsInfo, lenFiles+lenFolders)
 	if lenFolders > 0 {
-		for i, val := range folders {
-			res[i] = val
+		for i := 0; i < lenFolders; i++ {
+			res[i] = folders[i]
 		}
 	}
 	if lenFiles > 0 {
-		for i, val := range files {
-			res[i+lenFolders] = val
+		for i := 0; i < lenFiles; i++ {
+			res[i+lenFolders] = files[i]
 		}
 	}
 	return res, err
@@ -283,6 +280,7 @@ func checkPathSafety(path string) (string, error) {
 	if len(path) == 0 {
 		return "/", nil
 	}
+	path = strings.Replace(path, "\\", "/", -1)
 	if strings.Index(path, "../") > -1 {
 		return "", errors.New("Unsupported path format '../'")
 	}

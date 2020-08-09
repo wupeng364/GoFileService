@@ -12,8 +12,8 @@
 package htmlpage
 
 import (
-	"gofs/comm/httpserver"
-	"gofs/service/restful/signature"
+	"gofs/base/httpserver"
+	"gofs/base/signature"
 	"gutils/hstool"
 	"gutils/mloader"
 	"strings"
