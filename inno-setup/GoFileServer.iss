@@ -1,8 +1,8 @@
 [Setup]
 AppName=File Service
 AppVerName=GoFileService
-VersionInfoVersion=1.3.1.08020    
-VersionInfoTextVersion=2020-08-02
+VersionInfoVersion=1.4.0.08090    
+VersionInfoTextVersion=2020-08-09
 LicenseFile=package-info\license.txt
 DefaultDirName={code:getInstallDir}
 DefaultGroupName=GoFileService
@@ -27,27 +27,27 @@ Source: "package-source\bin\*"; Excludes:""; DestDir: "{app}\bin"; Flags: ignore
 Source: "..\bin\*"; Excludes:""; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs;
 
 [Icons]
-;å¼€å§‹èœå•
+;¿ªÊ¼²Ëµ¥
 Name: "{group}\{cm:UninstallProgram,File Service}"; Filename: "{uninstallexe}"
 
 [Registry]
 
 
 [Run]
-;é˜²ç«å¢™
+;·À»ğÇ½
 Filename: "{sys}\netsh.exe"; Parameters: "firewall delete allowedprogram ""{app}\gofs.exe"" ";
-Filename: "{sys}\netsh.exe"; Parameters: "firewall add allowedprogram ""{app}\gofs.exe"" ""GOFS Service"" ENABLE ALL";
+Filename: "{sys}\netsh.exe"; Parameters: "firewall add allowedprogram ""{app}\gofs.exe"" ""Gofs Service"" ENABLE ALL";
 
 
 [UninstallRun]
 
 [UninstallDelete]
-;æ¸…é™¤å®‰è£…ç›®å½•åŠæ–‡ä»¶
+;Çå³ı°²×°Ä¿Â¼¼°ÎÄ¼ş
 Name: {app}; Type: filesandordirs
 
 
 [Code]
-//åˆ¤æ–­å­—ç¬¦ä¸²æ˜¯å¦ç”± æ•°å­—ã€è‹±æ–‡å­—æ¯ã€å†’å·ã€åæ–œæ ç»„æˆ
+//ÅĞ¶Ï×Ö·û´®ÊÇ·ñÓÉ Êı×Ö¡¢Ó¢ÎÄ×ÖÄ¸¡¢Ã°ºÅ¡¢·´Ğ±¸Ü×é³É
 function IsChar(Str: string): Boolean;
 var
   i: Integer;
@@ -76,7 +76,7 @@ begin
   end;
 end;
 
-// è·å–é»˜è®¤å®‰è£…ä½ç½®
+// »ñÈ¡Ä¬ÈÏ°²×°Î»ÖÃ
 function getInstallDir(Param: String): String;
 var 
     Tx_Disk: String;
@@ -105,7 +105,7 @@ begin
     result := Tx_Disk+'GoFileServer';
 end;
 
-// å…³é—­è¿›ç¨‹
+// ¹Ø±Õ½ø³Ì
 function closeRuningProgram():boolean;
 var errorCode:Integer;
 begin
@@ -113,7 +113,7 @@ begin
   Result:=True;
 end;
 
-// åˆå§‹åŒ–æœåŠ¡
+// ³õÊ¼»¯·şÎñ
 function installService():boolean;
 var errorCode:Integer;
 begin
@@ -126,7 +126,7 @@ begin
   Result:=True;
 end;
 
-// å¸è½½æ³¨å†Œçš„æœåŠ¡
+// Ğ¶ÔØ×¢²áµÄ·şÎñ
 function uninstallService():boolean;
 var errorCode:Integer;
 begin
