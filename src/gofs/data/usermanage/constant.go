@@ -19,6 +19,8 @@ const (
 	AdminRole = 1
 	// NormalRole 普通用户角色标识
 	NormalRole = 0
+	// AdminUserID 默认管理员ID
+	AdminUserID = "admin"
 )
 
 // ErrorConnIsNil 空连接

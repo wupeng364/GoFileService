@@ -57,20 +57,20 @@ func (serviceRouter *ServiceRouter) doHandle(w http.ResponseWriter, r *http.Requ
 	}
 
 	// 如果是url正则检查, 则需要检查正则, 正则为':'后面的字符
-	for _, key := range serviceRouter.regexpHandlersIndex {
-		symbolIndex := strings.Index(key, ":")
+	for i := 0; i < len(serviceRouter.regexpHandlersIndex); i++ {
+		symbolIndex := strings.Index(serviceRouter.regexpHandlersIndex[i], ":")
 		if symbolIndex == -1 {
 			continue
 		}
-		baseURL := key[:symbolIndex]
+		baseURL := serviceRouter.regexpHandlersIndex[i][:symbolIndex]
 		if !strings.HasPrefix(r.URL.Path, baseURL) {
 			continue
 		}
-		if ok, _ := regexp.MatchString(baseURL+key[symbolIndex+1:], r.URL.Path); ok {
+		if ok, _ := regexp.MatchString(baseURL+serviceRouter.regexpHandlersIndex[i][symbolIndex+1:], r.URL.Path); ok {
 			if serviceRouter.isDebug {
-				fmt.Println("URL.Handler.Regexp: ", key)
+				fmt.Println("URL.Handler.Regexp: ", serviceRouter.regexpHandlersIndex[i])
 			}
-			serviceRouter.regexpHandlersMap[key](w, r)
+			serviceRouter.regexpHandlersMap[serviceRouter.regexpHandlersIndex[i]](w, r)
 			return
 		}
 
@@ -100,21 +100,21 @@ func (serviceRouter *ServiceRouter) doFilter(w http.ResponseWriter, r *http.Requ
 	}
 	// 1.2 检擦是否有指定路径的正则匹配过滤器设定, 优先处理
 	if nil != serviceRouter.regexpFiltersIndex && len(serviceRouter.regexpFiltersIndex) > 0 {
-		for _, key := range serviceRouter.regexpFiltersIndex {
-			symbolIndex := strings.Index(key, ":")
+		for i := 0; i < len(serviceRouter.regexpFiltersIndex); i++ {
+			symbolIndex := strings.Index(serviceRouter.regexpFiltersIndex[i], ":")
 			if symbolIndex == -1 {
 				continue
 			}
-			baseURL := key[:symbolIndex]
+			baseURL := serviceRouter.regexpFiltersIndex[i][:symbolIndex]
 			if !strings.HasPrefix(r.URL.Path, baseURL) {
 				continue
 			}
 
-			if ok, _ := regexp.MatchString(key[:symbolIndex]+key[symbolIndex+1:], r.URL.Path); ok {
+			if ok, _ := regexp.MatchString(serviceRouter.regexpFiltersIndex[i][:symbolIndex]+serviceRouter.regexpFiltersIndex[i][symbolIndex+1:], r.URL.Path); ok {
 				if serviceRouter.isDebug {
-					fmt.Println("URL.Filter.Regexp: ", key)
+					fmt.Println("URL.Filter.Regexp: ", serviceRouter.regexpFiltersIndex[i])
 				}
-				serviceRouter.regexpFiltersMap[key](w, r, func() {
+				serviceRouter.regexpFiltersMap[serviceRouter.regexpFiltersIndex[i]](w, r, func() {
 					serviceRouter.doHandle(w, r)
 				})
 				return
@@ -191,8 +191,8 @@ func (serviceRouter *ServiceRouter) AddURLFilter(url string, filter FilterFunc) 
 // removeFilterIndex 删除filter索引
 func (serviceRouter *ServiceRouter) removeFilterIndex(url string) {
 	if len(url) > 0 {
-		for i, key := range serviceRouter.regexpFiltersIndex {
-			if key == url {
+		for i := 0; i < len(serviceRouter.regexpFiltersIndex); i++ {
+			if serviceRouter.regexpFiltersIndex[i] == url {
 				serviceRouter.regexpFiltersIndex = append(serviceRouter.regexpFiltersIndex[:i], serviceRouter.regexpFiltersIndex[i+i:]...)
 				break
 			}
@@ -265,8 +265,8 @@ func (serviceRouter *ServiceRouter) AddHandler(url string, handler HandlersFunc)
 // removeHandlerIndex 删除handler索引
 func (serviceRouter *ServiceRouter) removeHandlerIndex(url string) {
 	if len(url) > 0 {
-		for i, key := range serviceRouter.regexpHandlersIndex {
-			if key == url {
+		for i := 0; i < len(serviceRouter.regexpHandlersIndex); i++ {
+			if serviceRouter.regexpHandlersIndex[i] == url {
 				serviceRouter.regexpHandlersIndex = append(serviceRouter.regexpHandlersIndex[:i], serviceRouter.regexpHandlersIndex[i+i:]...)
 				break
 			}

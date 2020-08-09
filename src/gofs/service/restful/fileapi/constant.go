@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	baseurl = "/fsapi"
+	baseurl = "/file"
 	// headerFormNameFile 用头信息标记Form表单中文件的FormName
 	headerFormNameFile = "FormName-File"
 	// defaultFormNameFile 默认使用这个作为Form表单中文件的FormName
@@ -23,58 +23,10 @@ const (
 	defaultFormNameFspath = "Save-Path"
 )
 
-// 错误处理支持的操作
-// 忽略, 忽略全部
-type errorOperationStruct struct {
-	ignore      string
-	ignoreall   string
-	replace     string
-	replaceall  string
-	discontinue string
-}
-
-// 申请Token的类型
-type tokenTypeStruct struct {
-	copyDir  string
-	moveDir  string
-	transfer string
-}
-
-// FileBatchOperationTokenObject 复制文件Token保存对象
-type FileBatchOperationTokenObject struct {
-	CountIndex    int64
-	ErrorString   string
-	Src           string
-	Dst           string
-	IsSrcExist    bool
-	IsDstExist    bool
-	IsReplace     bool
-	IsReplaceAll  bool
-	IsIgnore      bool
-	IsIgnoreAll   bool
-	IsComplete    bool
-	IsDiscontinue bool
-}
-
-// FileTransferToken 上传下载文件零时保存的数据
-type FileTransferToken struct {
-	FilePath string
-}
-
-// ErrorOperation 定义好的错误可选项目
-var ErrorOperation = &errorOperationStruct{
-	ignore:      "ignore",
-	ignoreall:   "ignoreall",
-	replace:     "replace",
-	replaceall:  "replaceall",
-	discontinue: "discontinue",
-}
-
-// TokenType 定义好的Token类型
-var TokenType = &tokenTypeStruct{
-	copyDir:  "copy_dir",
-	moveDir:  "move_dir",
-	transfer: "transfer",
+// StreamToken 上传下载文件零时保存的数据
+type StreamToken struct {
+	Type string
+	Data string
 }
 
 // ErrorDiscontinue ErrorDiscontinue
@@ -97,3 +49,6 @@ var ErrorParentFolderNotExist = errors.New("parent folder does not exist")
 
 // ErrorNewNameIsEmpty ErrorNewNameIsEmpty
 var ErrorNewNameIsEmpty = errors.New("New name cannot be empty")
+
+// ErrorPermissionInsufficient 权限不足
+var ErrorPermissionInsufficient = errors.New("权限不足")

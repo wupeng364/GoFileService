@@ -9,8 +9,8 @@
 
 package usermanage
 
-// 用户管理接口
-type userManageInterface interface {
+// UserManage 用户管理接口
+type UserManage interface {
 	InitDriver(db interface{}) error            // 初始化驱动指针
 	InitTables() error                          // 创建初始表和数据
 	ListAllUsers() (*[]UserInfo, error)         // 列出所有用户数据, 无分页

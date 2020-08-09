@@ -1,0 +1,120 @@
+文件操作接口
+List:
+	描述: 请求文件信息, 返回文件信息列表
+	签名校验: true
+	参数: 
+		path string: 文件夹
+		sort string: 排序字段[ FileSize, CtTime ]
+		asc bool: 是否升序排序
+	返回结果: 
+		[{
+			Path     string
+			CtTime   int64
+			IsFile   bool
+			FileSize int64
+		}]
+
+Del:
+	描述: 删除文件|文件夹
+	签名校验: true
+	参数: 
+		path string: 文件|文件夹
+	返回结果: 
+		无
+
+ReName:
+	描述: 重命名文件|文件夹
+	签名校验: true
+	参数: 
+		path string: 文件|文件夹
+		name string: 新的名字
+	返回结果: 
+		无
+
+NewFolder:
+	描述: 新建文件|文件夹
+	签名校验: true
+	参数: 
+		path string: 新文件夹路径
+	返回结果: 
+		无
+
+AsyncExec:
+	描述: 发起一个异步操作, 返回一个可以查询的tooken
+	签名校验: true
+	参数: 
+		func string: 执行的动作[ CopyAsync(复制), MoveAsync(移动) ]
+		AsyncExec动作函数依赖参数, 见 [AsyncExec动作函数]
+	接口:
+		interface AsyncTask {
+			Name() string                                  // 动作名字
+			Init(mctx *mloader.Loader) AsyncTask           // 初始化对象
+			Execute(r *http.Request) (string, error)       // 动作执行, 返回一个tooken
+			Status(w http.ResponseWriter, r *http.Request) // 查询动作状态, 在内部返回数据
+		}
+	
+AsyncExecToken:
+	描述: 查询由AsyncExec返回的token状态
+	签名校验: true
+	参数: 
+		func string: 执行的动作[ CopyAsync(复制), MoveAsync(移动) ]
+		token string: AsyncExec返回的token
+	返回结果:
+		执行 AsyncTask.Status
+
+
+[ AsyncExec动作函数 ]:
+CopyAsync, MoveAsync:
+	描述: 异步操作文件|文件夹, 返回token用于查询进度在出现重复、错误时, 
+	如果在指定时间内未操作token的对象字段值, 则会退出等待, 不再继续执行, 返回错误
+	签名校验: true
+	参数: 
+		srcPath string: 源文件|文件夹路径
+		dstPath string: 目标文件|文件夹路径
+		replace bool: 出现重复是否覆盖, 如果为false则在重复时会暂停操作, 等待token的对象字段值做出更新
+		ignore bool: 是否忽略执行过程中的错误, 同replace参数规则
+	返回结果: 
+		Execute:
+			返回token string
+	token查询(Status):
+		GET: 	
+			参数:  同AsyncToken
+			返回结果:
+				{
+					CountIndex    int64  // 已处理的个数
+					ErrorString   string // 错误信息
+					Src           string // 当前正在处理的源路径
+					Dst           string // 当前正在处理的目标路径
+					IsSrcExist    bool   // 源路径是否存在
+					IsDstExist    bool   // 目标路径是否存在
+					IsReplace     bool   // 是否替换, 单次中断执行指令, 读取后设为false
+					IsReplaceAll  bool   // 是否替换, 单次API执行指令, 设置后后续中断时自动替换
+					IsIgnore      bool   // 是否忽略错误, 单次中断执行指令, 读取后设为false
+					IsIgnoreAll   bool   // 是否忽略错误, 单次API执行指令, 设置后后续中断时自动替换
+					IsComplete    bool   // 是否执行完毕
+					IsDiscontinue bool   // 是否已中断操作
+				}
+		POST: 
+		参数:  
+			在AsyncToken基础上加operation[ignore, ignoreall, replace, replaceall, discontinue]
+			返回结果:
+				无
+FileStreamToken:
+	描述: 传输令牌申请
+	签名校验: true
+	参数: 
+		data string: 可选数据项, 一般为path
+		type string: 类型
+	返回结果:
+		token string
+
+FileStream:
+	描述: 文件上传|下载, 
+	签名校验: true
+	参数: 
+		token string: FileStreamToken 申请的key
+	返回结果:
+		get:
+			download, 下载请求
+		post, put:
+		upload, 上传请求

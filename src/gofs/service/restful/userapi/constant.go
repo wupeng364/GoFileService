@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	baseurl = "/userapi"
+	baseurl = "/user"
 )
 
 // ErrorUserIDIsNil ErrorUserIdIsNil

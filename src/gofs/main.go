@@ -3,15 +3,16 @@ package main
 import (
 	"flag"
 	"fmt"
-	"gofs/comm/conf"
-	"gofs/comm/httpserver"
-	"gofs/comm/sqlite"
+	"gofs/base/conf"
+	"gofs/base/httpserver"
+	"gofs/base/signature"
 	"gofs/data/filemanage"
+	"gofs/data/filepermission"
 	"gofs/data/usermanage"
 	"gofs/extend/htmlpage"
 	"gofs/service/restful/fileapi"
+	"gofs/service/restful/fpmsapi"
 	"gofs/service/restful/preview"
-	"gofs/service/restful/signature"
 	"gofs/service/restful/userapi"
 	"gutils/mloader"
 	"gutils/strtool"
@@ -34,9 +35,9 @@ func main() {
 	mloader.SetParam("DEBUG", strtool.String2Bool(*debug))
 	mloader.SetParam("app.name", *name)
 	// 加载模块
-	mloader.Loads(new(conf.AppConf), new(httpserver.HTTPServer), new(sqlite.SqliteConn))
-	mloader.Loads(new(filemanage.FileManager), new(usermanage.UserManager))
-	mloader.Loads(new(signature.Signature), new(userapi.UserAPI), new(fileapi.FileAPI), new(preview.Preview))
+	mloader.Loads(new(conf.AppConf), new(httpserver.HTTPServer), new(signature.Signature))
+	mloader.Loads(new(filemanage.FileManager), new(usermanage.UserManager), new(filepermission.FPmsManager))
+	mloader.Loads(new(userapi.UserAPI), new(fileapi.FileAPI), new(fpmsapi.FPmsAPI), new(preview.Preview))
 	mloader.Loads(new(htmlpage.HTMLPage))
 	// 启动服务
 	res, err := mloader.Invoke("HTTPServer", "DoStartServer", &http.Server{

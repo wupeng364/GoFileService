@@ -12,15 +12,16 @@
 package usermanage
 
 import (
+	"database/sql"
 	"fmt"
-	"gofs/comm/sqlite"
+	_ "go-sqlite3"
 	"gutils/strtool"
 	"time"
 )
 
 // sqlite3实现
 type impBySqlite struct {
-	db *sqlite.SqliteConn
+	dbSource string
 }
 
 // InitDriver 初始化驱动
@@ -28,15 +29,18 @@ func (sqlti *impBySqlite) InitDriver(db interface{}) error {
 	if nil == db {
 		return ErrorConnIsNil
 	}
-	sqlti.db = db.(*sqlite.SqliteConn)
+	sqlti.dbSource = db.(string)
 	return nil
+}
+func (sqlti *impBySqlite) Open() (*sql.DB, error) {
+	return sql.Open("sqlite3", sqlti.dbSource)
 }
 
 // InitTables 初始化 users 表
 // 添加默认用户 admin, 密码为空
 func (sqlti *impBySqlite) InitTables() error {
 	// 打开数据库
-	db, err := sqlti.db.Open()
+	db, err := sqlti.Open()
 	if err != nil {
 		return err
 	}
@@ -68,7 +72,7 @@ func (sqlti *impBySqlite) InitTables() error {
 		ts.Rollback()
 		return err
 	}
-	_, err = stmt.Exec("admin", "系统管理员", AdminRole, strtool.GetMD5(""), time.Now())
+	_, err = stmt.Exec(AdminUserID, "系统管理员", AdminRole, strtool.GetMD5(""), time.Now())
 	if err != nil {
 		ts.Rollback()
 		return err
@@ -86,7 +90,7 @@ func (sqlti *impBySqlite) InitTables() error {
 // ListAllUsers 列出所有用户数据, 无分页
 func (sqlti *impBySqlite) ListAllUsers() (*[]UserInfo, error) {
 	// 打开数据库
-	db, err := sqlti.db.Open()
+	db, err := sqlti.Open()
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +118,7 @@ func (sqlti *impBySqlite) ListAllUsers() (*[]UserInfo, error) {
 // QueryUser 根据用户ID查询详细信息
 func (sqlti *impBySqlite) QueryUser(userID string) (*UserInfo, error) {
 	// 打开数据库
-	db, err := sqlti.db.Open()
+	db, err := sqlti.Open()
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +151,7 @@ func (sqlti *impBySqlite) AddUser(user *UserInfo) error {
 		return ErrorUserNameIsNil
 	}
 	// 打开数据库
-	db, err := sqlti.db.Open()
+	db, err := sqlti.Open()
 	if err != nil {
 		return err
 	}
@@ -192,7 +196,7 @@ func (sqlti *impBySqlite) UpdateUser(user *UserInfo) error {
 	//	if nil == user_old { return ErrorUserNotExist }
 
 	// 打开数据库
-	db, err := sqlti.db.Open()
+	db, err := sqlti.Open()
 	if err != nil {
 		return err
 	}
@@ -232,7 +236,7 @@ func (sqlti *impBySqlite) DelUser(userID string) error {
 	}
 
 	// 打开数据库
-	db, err := sqlti.db.Open()
+	db, err := sqlti.Open()
 	if err != nil {
 		return err
 	}
@@ -272,7 +276,7 @@ func (sqlti *impBySqlite) CheckPwd(userID, pwd string) bool {
 	}
 
 	// 打开数据库
-	db, err := sqlti.db.Open()
+	db, err := sqlti.Open()
 	if err != nil {
 		return false
 	}
@@ -299,7 +303,7 @@ func (sqlti *impBySqlite) UpdatePWD(user *UserInfo) error {
 	}
 
 	// 打开数据库
-	db, err := sqlti.db.Open()
+	db, err := sqlti.Open()
 	if err != nil {
 		return err
 	}

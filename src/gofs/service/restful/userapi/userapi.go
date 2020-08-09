@@ -15,9 +15,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gofs/comm/httpserver"
+	"gofs/base/httpserver"
+	"gofs/base/signature"
 	"gofs/data/usermanage"
-	"gofs/service/restful/signature"
 	"gutils/hstool"
 	"gutils/mloader"
 	"net/http"
@@ -74,8 +74,29 @@ func (userapi *UserAPI) RoutList() httpserver.StructRegistrar {
 	}
 }
 
+// checkPermission 检查是否是管理员
+func (userapi *UserAPI) checkPermission(w http.ResponseWriter, r *http.Request) bool {
+	userID := userapi.sg.GetUserID4Request(r)
+	if len(userID) > 0 {
+		qUserID := r.FormValue("userid")
+		if len(qUserID) > 0 && qUserID == userID {
+			return true
+		}
+		if user, err := userapi.um.QueryUser(userID); nil == err {
+			if user.UserType == usermanage.AdminRole {
+				return true
+			}
+		}
+	}
+	w.WriteHeader(http.StatusForbidden)
+	return false
+}
+
 // ListAllUsers 列出所有用户数据, 无分页
 func (userapi *UserAPI) ListAllUsers(w http.ResponseWriter, r *http.Request) {
+	if !userapi.checkPermission(w, r) {
+		return
+	}
 	if users, err := userapi.um.ListAllUsers(); nil == err {
 		if tb, err := json.Marshal(*users); nil == err {
 			httpserver.SendSuccess(w, string(tb))
@@ -94,7 +115,9 @@ func (userapi *UserAPI) QueryUser(w http.ResponseWriter, r *http.Request) {
 		httpserver.SendError(w, ErrorUserIDIsNil)
 		return
 	}
-
+	if !userapi.checkPermission(w, r) {
+		return
+	}
 	if user, err := userapi.um.QueryUser(userID); nil == err {
 		if tb, err := json.Marshal(*user); nil == err {
 			httpserver.SendSuccess(w, string(tb))
@@ -119,6 +142,9 @@ func (userapi *UserAPI) AddUser(w http.ResponseWriter, r *http.Request) {
 		httpserver.SendError(w, ErrorUserNameIsNil)
 		return
 	}
+	if !userapi.checkPermission(w, r) {
+		return
+	}
 	uinfo := usermanage.UserInfo{
 		UserID:   userID,
 		UserName: userName,
@@ -141,6 +167,9 @@ func (userapi *UserAPI) UpdateUserPwd(w http.ResponseWriter, r *http.Request) {
 		httpserver.SendError(w, ErrorUserIDIsNil)
 		return
 	}
+	if !userapi.checkPermission(w, r) {
+		return
+	}
 	if err := userapi.um.UpdateUserPwd(userID, userPwd); nil == err {
 		httpserver.SendSuccess(w, "")
 	} else {
@@ -160,6 +189,9 @@ func (userapi *UserAPI) UpdateUserName(w http.ResponseWriter, r *http.Request) {
 		httpserver.SendError(w, ErrorUserNameIsNil)
 		return
 	}
+	if !userapi.checkPermission(w, r) {
+		return
+	}
 	if err := userapi.um.UpdateUserName(userID, userName); nil == err {
 		httpserver.SendSuccess(w, "")
 	} else {
@@ -172,6 +204,9 @@ func (userapi *UserAPI) DelUser(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("userid")
 	if len(userID) == 0 {
 		httpserver.SendError(w, ErrorUserIDIsNil)
+		return
+	}
+	if !userapi.checkPermission(w, r) {
 		return
 	}
 	users, _ := userapi.um.ListAllUsers()
@@ -200,7 +235,7 @@ func (userapi *UserAPI) DelUser(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//CheckPwd 校验密码是否一致,  校验成功返回session
+// CheckPwd 校验密码是否一致,  校验成功返回session
 func (userapi *UserAPI) CheckPwd(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("userid")
 	pwd := r.FormValue("pwd")
@@ -215,15 +250,15 @@ func (userapi *UserAPI) CheckPwd(w http.ResponseWriter, r *http.Request) {
 			httpserver.SendError(w, err)
 			return
 		}
+
 		httpserver.SendSuccess(w, ack.ToJSON())
 	} else {
 		httpserver.SendError(w, ErrorPwdIsError)
 	}
 }
 
-//Logout 注销会话
+// Logout 注销会话
 func (userapi *UserAPI) Logout(w http.ResponseWriter, r *http.Request) {
-
 	err := userapi.sg.DestroySignature4HTTP(r)
 	if nil != err {
 		httpserver.SendError(w, err)

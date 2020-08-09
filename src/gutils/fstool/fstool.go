@@ -192,8 +192,8 @@ func MoveFiles(src, dst string, replace, ignore bool, callback MoveCallback) err
 		// src&dst都是文件夹, 则考虑合并规则, 处理里面的文件
 		if !srcIsfile && !dstIsfile {
 			list, _ := GetDirList(src)
-			for _, val := range list {
-				err = MoveFiles(src+"/"+val, dst+"/"+val, replace, ignore, callback)
+			for i := 0; i < len(list); i++ {
+				err = MoveFiles(src+"/"+list[i], dst+"/"+list[i], replace, ignore, callback)
 				if err != nil {
 					return err // 返回终止信号
 				}

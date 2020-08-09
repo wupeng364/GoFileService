@@ -14,9 +14,9 @@ package preview
 import (
 	"encoding/json"
 	"fmt"
-	"gofs/comm/httpserver"
+	"gofs/base/httpserver"
+	"gofs/base/signature"
 	"gofs/data/filemanage"
-	"gofs/service/restful/signature"
 	"gutils/hstool"
 	"gutils/mloader"
 	"gutils/strtool"
@@ -57,7 +57,6 @@ func (preview *Preview) init() {
 	}
 
 	// 注册Api签名拦截器
-	// preview.hs.AddIgnoreFilter(baseurl + "/tokendatas")
 	preview.hs.AddURLFilter(baseurl+"/:"+`[\S]+`, preview.sg.RestfulAPIFilter)
 
 	fmt.Println("   > PreviewModule http registered end")
@@ -93,7 +92,7 @@ func (preview *Preview) Asktoken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	token := strtool.GetUUID()
-	err := preview.sg.SetSessionAttr4HTTP(r, token, qpath)
+	err := preview.sg.SetSessionAttr4Request(r, token, qpath)
 	if nil != err {
 		httpserver.SendError(w, err)
 		return
@@ -105,7 +104,7 @@ func (preview *Preview) Asktoken(w http.ResponseWriter, r *http.Request) {
 func (preview *Preview) TokenDatas(w http.ResponseWriter, r *http.Request) {
 	qToken := r.FormValue("token")
 	qType := r.FormValue("type")
-	tData, err := preview.sg.GetSessionAttr4HTTP(r, qToken)
+	tData, err := preview.sg.GetSessionAttr4Request(r, qToken)
 	if nil != err {
 		httpserver.SendError(w, err)
 		return
@@ -147,86 +146,92 @@ func (preview *Preview) TokenDatas(w http.ResponseWriter, r *http.Request) {
 	case "stream":
 		{
 			qPath := r.FormValue("path")
-			qRange := r.FormValue("Range")
 			if len(qPath) == 0 {
 				qPath = tData
 			}
-			if !preview.fm.IsFile(qPath) {
-				httpserver.SendError(w, ErrorFileNotExist)
-				return
-			}
-			size, err := preview.fm.GetFileSize(qPath)
-			if err != nil {
-				httpserver.SendError(w, err)
-				return
-			}
-			if len(qRange) == 0 {
-				qRange = r.Header.Get("Range")
-			}
-			start := int64(0)
-			end := int64(size)
-			if len(qRange) > 0 {
-				temp := qRange[strings.Index(qRange, "=")+1:]
-				index := strings.Index(temp, "-")
-				if index > -1 {
-					start, err = strconv.ParseInt(temp[0:strings.Index(temp, "-")], 10, 64)
-					if nil != err {
-						start = 0
-					}
-					end, err = strconv.ParseInt(temp[strings.Index(temp, "-")+1:], 10, 64)
-					if nil != err || end == 0 {
-						end = size
-					}
-				}
-			}
-			r, err := preview.fm.DoRead(qPath, start)
-			defer func() {
-				if nil != r {
-					r.Close()
-				}
-			}()
-			if nil != err {
-				httpserver.SendError(w, err)
-				return
-			}
-			{
-				stransSize := end - start
-				w.Header().Set("Content-Length", strconv.Itoa(int(stransSize)))
-				if len(qRange) > 0 {
-					w.Header().Set("Content-Range", "bytes "+strconv.Itoa(int(start))+"-"+strconv.Itoa(int(end-1))+"/"+strconv.Itoa(int(size)))
-					w.WriteHeader(http.StatusPartialContent)
-				}
-				//
-				for {
-					if stransSize == 0 || stransSize < 0 {
-						break
-					}
-					buf := make([]byte, 4096)
-					n, err := r.Read(buf)
-					if err != nil && err != io.EOF {
-						httpserver.SendError(w, err)
-						break
-					}
-					if 0 == n {
-						break
-					}
-					if n > int(stransSize) {
-						n = int(stransSize)
-					}
-					wn, err := w.Write(buf[:n])
-					if nil != err {
-						break
-					}
-					stransSize = stransSize - int64(wn)
-				}
-				//w.WriteHeader(http.StatusOK)
-			}
-
-			// io.Copy(w, r)
+			preview.doSendStream(w, r, qPath)
 		}
 		break
 	default:
 		httpserver.SendError(w, ErrorOprationFailed)
 	}
 
+}
+
+// doSendStream 发送数据流, 支持分段
+func (preview *Preview) doSendStream(w http.ResponseWriter, r *http.Request, path string) {
+	// 校验
+	if !preview.fm.IsFile(path) {
+		httpserver.SendError(w, ErrorFileNotExist)
+		return
+	}
+	size, err := preview.fm.GetFileSize(path)
+	if err != nil {
+		httpserver.SendError(w, err)
+		return
+	}
+	qRange := r.FormValue("Range")
+	if len(qRange) == 0 {
+		qRange = r.Header.Get("Range")
+	}
+	start := int64(0)
+	end := int64(size)
+	if len(qRange) > 0 {
+		temp := qRange[strings.Index(qRange, "=")+1:]
+		index := strings.Index(temp, "-")
+		if index > -1 {
+			start, err = strconv.ParseInt(temp[0:strings.Index(temp, "-")], 10, 64)
+			if nil != err {
+				start = 0
+			}
+			end, err = strconv.ParseInt(temp[strings.Index(temp, "-")+1:], 10, 64)
+			if nil != err || end == 0 {
+				end = size
+			}
+		}
+	}
+	fr, err := preview.fm.DoRead(path, start)
+	defer func() {
+		if nil != fr {
+			fr.Close()
+		}
+	}()
+	if nil != err {
+		httpserver.SendError(w, err)
+		return
+	}
+	{
+		stransSize := end - start
+		w.Header().Set("Content-Length", strconv.Itoa(int(stransSize)))
+		if len(qRange) > 0 {
+			w.Header().Set("Content-Range", "bytes "+strconv.Itoa(int(start))+"-"+strconv.Itoa(int(end-1))+"/"+strconv.Itoa(int(size)))
+			w.WriteHeader(http.StatusPartialContent)
+		}
+		//
+		for {
+			if stransSize == 0 || stransSize < 0 {
+				if end == size {
+					// fm.RemoveToken(token)
+				}
+				break
+			}
+			buf := make([]byte, 4096)
+			n, err := fr.Read(buf)
+			if err != nil && err != io.EOF {
+				httpserver.SendError(w, err)
+				break
+			}
+			if 0 == n {
+				break
+			}
+			if n > int(stransSize) {
+				n = int(stransSize)
+			}
+			wn, err := w.Write(buf[:n])
+			if nil != err {
+				break
+			}
+			stransSize = stransSize - int64(wn)
+		}
+	}
 }

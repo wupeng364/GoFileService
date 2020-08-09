@@ -11,13 +11,15 @@
 
 package usermanage
 
-import "gutils/mloader"
+import (
+	"gofs/base/conf"
+	"gutils/mloader"
+	"path/filepath"
+)
 
 // UserManager 用户管理模块
-// 配置参数(mloader.GetParam): usermanager.dbtype
 type UserManager struct {
-	mctx *mloader.Loader
-	umi  userManageInterface
+	umi UserManage
 }
 
 // ModuleOpts 模块加载器接口实现, 返回模块信息&配置
@@ -27,9 +29,7 @@ func (umg *UserManager) ModuleOpts() mloader.Opts {
 		Version:     1.1,
 		Description: "用户管理模块",
 		OnReady: func(mctx *mloader.Loader) {
-			umg.mctx = mctx
-			dbType := umg.mctx.GetParam("usermanager.dbtype").ToString("sqlite")
-			umg.umi = umg.getUserManageInterfaceImp(dbType)
+			umg.umi = umg.getUserManageInterfaceImp(mctx)
 		},
 		OnSetup: func() {
 			// 执行建库、建表
@@ -99,15 +99,30 @@ func (umg *UserManager) CheckPwd(userID, pwd string) bool {
 }
 
 // getUserManageInterfaceImp 获取启动类型, 并实例对象指针
-func (umg *UserManager) getUserManageInterfaceImp(dbType string) userManageInterface {
+func (umg *UserManager) getUserManageInterfaceImp(mctx *mloader.Loader) UserManage {
 	// 默认使用sqlite驱动
-	if true {
-		umi := &impBySqlite{}
-		err := umi.InitDriver(umg.mctx.GetModuleByTemplate(umi.db))
-		if nil != err {
-			panic(err)
-		}
-		return umi
+	dbType := mctx.GetParam(conf.DataBasType).ToString("")
+	if len(dbType) == 0 {
+		panic(conf.DataBasType + " is empty")
 	}
-	return nil
+	dbSource := mctx.GetParam(conf.DataBaseSource).ToString("")
+	if len(dbSource) == 0 {
+		panic(conf.DataBaseSource + " is empty")
+	}
+	var umi UserManage
+	switch dbType {
+	case conf.DefaultDataBaseType:
+		{
+			if !filepath.IsAbs(dbSource) {
+				dbSource, _ = filepath.Abs(dbSource)
+			}
+			umi = &impBySqlite{}
+			err := umi.InitDriver(dbSource)
+			if nil != err {
+				panic(err)
+			}
+		}
+		break
+	}
+	return umi
 }

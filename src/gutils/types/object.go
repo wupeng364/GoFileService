@@ -40,7 +40,7 @@ func (obj Object) ToString(d string) string {
 		return d
 	}
 	r, ok := obj.O.(string)
-	if ok {
+	if ok && len(r) > 0 {
 		return r
 	}
 	return d
