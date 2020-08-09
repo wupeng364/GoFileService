@@ -7,48 +7,22 @@
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 // IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-// sqlite模块, 提供系统数据库库管理
+package signature
 
-package sqlite
-
-import (
-	"database/sql"
-	"fmt"
-	_ "go-sqlite3"
-	"gutils/mloader"
-	"path/filepath"
-	"strings"
-)
-
-// SqliteConn 系统数据库
-// 配置参数(mloader.GetParam): app.name
-type SqliteConn struct {
-	dbSource string
-	mctx     *mloader.Loader
-}
-
-// ModuleOpts 模块加载器接口实现, 返回模块信息&配置
-func (sqliteconn *SqliteConn) ModuleOpts() mloader.Opts {
-	return mloader.Opts{
-		Name:        "SqliteConn",
-		Version:     1.0,
-		Description: "Sqlite模块",
-		OnReady: func(mctx *mloader.Loader) {
-			sqliteconn.mctx = mctx
-		},
-		OnInit: func() {
-			path, err := filepath.Abs(strings.Replace("./conf/{name}.db", "{name}", sqliteconn.mctx.GetParam("app.name").ToString("app"), -1))
-			if nil != err {
-				panic(err)
-			}
-			sqliteconn.dbSource = path
-
-			fmt.Println("   > SqliteConn dbSource=" + sqliteconn.dbSource)
-		},
-	}
-}
-
-// Open 打开一个数据库连接
-func (sqliteconn *SqliteConn) Open() (*sql.DB, error) {
-	return sql.Open("sqlite3", sqliteconn.dbSource)
+// 会话管理接口
+type signature interface {
+	// 初始化模块
+	SignatureInitial() error
+	// 生成访问令牌, 返回AccessToken
+	GenerateAccessToken(userID string, singnatureType SingnatureType) (AccessToken, error)
+	// 验证签名是否有效, 通过accessKey查找SecretKey, 计算MD5(requestparameter+SecretKey)==sign校验参数
+	VerificationSignature(accessKey, sign string, requestparameter string) bool
+	// 销毁签名, 使其无效
+	DestroySignature(accessKey string) error
+	// 获取用户ID
+	GetUserID(accessKey string) string
+	// 设置属性到session里面, 会话过期自动删除
+	SetSessionAttr(accessKey, key, val string) error
+	// 获取用户放在session里面的属性
+	GetSessionAttr(accessKey, key string) (string, error)
 }

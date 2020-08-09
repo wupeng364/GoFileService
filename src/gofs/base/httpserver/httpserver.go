@@ -147,8 +147,8 @@ func BuildHandlersMap(rs Registrar) (map[string]hstool.HandlersFunc, error) {
 		baseURL += "/"
 	}
 	handlersMap := make(map[string]hstool.HandlersFunc, len(hf))
-	for _, fn := range hf {
-		_fn := reflecttool.GetFunctionName(fn, '.')
+	for i := 0; i < len(hf); i++ {
+		_fn := reflecttool.GetFunctionName(hf[i], '.')
 		_fm := strings.Index(_fn, "-")
 		if _fm > -1 {
 			_fn = _fn[:_fm]
@@ -157,7 +157,7 @@ func BuildHandlersMap(rs Registrar) (map[string]hstool.HandlersFunc, error) {
 		if srg.IsToLower {
 			_fn = strings.ToLower(_fn)
 		}
-		handlersMap[_fn] = fn
+		handlersMap[_fn] = hf[i]
 	}
 	return handlersMap, nil
 }

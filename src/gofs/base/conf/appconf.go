@@ -12,6 +12,7 @@
 package conf
 
 import (
+	"fmt"
 	"gutils/conftool"
 	"gutils/mloader"
 	"path/filepath"
@@ -34,7 +35,9 @@ func (appconf *AppConf) ModuleOpts() mloader.Opts {
 			appconf.mctx = mctx
 		},
 		OnInit: func() {
-			confpath := appconf.mctx.GetParam(AppconfDir).ToString("./conf/" + appconf.mctx.GetParam("app.name").ToString("app") + ".json")
+			// 初始化配置
+			appname := appconf.mctx.GetParam("app.name").ToString("app")
+			confpath := appconf.mctx.GetParam(AppconfDir).ToString("./conf/" + appname + ".json")
 			if !filepath.IsAbs(confpath) {
 				confpath, _ = filepath.Abs(confpath)
 			}
@@ -43,8 +46,16 @@ func (appconf *AppConf) ModuleOpts() mloader.Opts {
 				panic(err)
 			}
 			// 读取配置信息
-			appconf.mctx.SetParam("htmlpage.static", appconf.GetConfig(HTMLpageStaticDir).ToString("./static"))
-			appconf.mctx.SetParam("httpserver.listen", appconf.GetConfig(HTTPServerListen).ToString("0.0.0.0:8080"))
+			appconf.mctx.SetParam(HTMLpageStaticDir, appconf.GetConfig(HTMLpageStaticDir).ToString("./static"))
+			appconf.mctx.SetParam(HTTPServerListen, appconf.GetConfig(HTTPServerListen).ToString("0.0.0.0:8080"))
+			// 数据库位置
+			appconf.mctx.SetParam(DataBasType, appconf.GetConfig(DataBasType).ToString(DefaultDataBaseType))
+			appconf.mctx.SetParam(DataBaseSource, appconf.GetConfig(DataBaseSource).ToString("./conf/"+appname+".db"))
+			//
+			fmt.Println("   > " + HTMLpageStaticDir + "=" + appconf.mctx.GetParam(HTMLpageStaticDir).ToString(""))
+			fmt.Println("   > " + HTTPServerListen + "=" + appconf.mctx.GetParam(HTTPServerListen).ToString(""))
+			fmt.Println("   > " + DataBasType + "=" + appconf.mctx.GetParam(DataBasType).ToString(""))
+			fmt.Println("   > " + DataBaseSource + "=" + appconf.mctx.GetParam(DataBaseSource).ToString(""))
 		},
 	}
 }

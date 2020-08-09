@@ -18,4 +18,11 @@ const (
 	HTTPServerListen = "httpserver.listen"
 	// FileManagerMounts 文件挂载信息
 	FileManagerMounts = "filemanager.mounts"
+	// DataBaseSource 数据库位置|链接
+	DataBaseSource = "database.dbsource"
+	// DataBasType 数据库类型
+	DataBasType = "database.dbtype"
+
+	// DefaultDataBaseType 默认数据库类型
+	DefaultDataBaseType = "sqllite"
 )
