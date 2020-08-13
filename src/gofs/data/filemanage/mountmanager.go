@@ -36,7 +36,7 @@ const (
 )
 
 // 挂在的节点配置
-type mountNodes struct {
+type mountNode struct {
 	mtPath string // 挂载路径-虚拟路径
 	mtType string // 挂载类型
 	mtAddr string // 实际挂载路径
@@ -45,7 +45,7 @@ type mountNodes struct {
 
 // 挂载管理器
 type mountManager struct {
-	mtnds []mountNodes
+	mtnds []mountNode
 }
 
 // initMountItems 初始化挂载节点
@@ -53,11 +53,11 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 	if len(mounts) == 0 {
 		panic("mounts is nil")
 	}
-	mtnds := make([]mountNodes, len(mounts))
+	mtnds := make([]mountNode, len(mounts))
 	count := 0
 	for key, val := range mounts {
 		newVal := val.(map[string]interface{})
-		mtnds[count] = parseMountNodes(mountNodes{
+		mtnds[count] = parseMountNode(mountNode{
 			mtPath: key,
 			mtType: newVal[mountTypeKey].(string),
 			mtAddr: newVal[mountAddrKey].(string),
@@ -66,13 +66,13 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 		// 本地驱动
 		if mtnds[count].mtType == localTypeKey {
 			// 初始化必要的文件夹
-			loclTemp := strtool.Parse2UnixPath(mtnds[count].mtAddr + "/" + tempDir)
+			loclTemp := filepath.Clean(mtnds[count].mtAddr + "/" + tempDir)
 			if !fstool.IsDir(loclTemp) {
 				if err := fstool.MkdirAll(loclTemp); nil != err {
 					panic("Create Folder Failed, Path: " + loclTemp + ", " + err.Error())
 				}
 			}
-			loclDeleting := strtool.Parse2UnixPath(mtnds[count].mtAddr + "/" + deletingDir)
+			loclDeleting := filepath.Clean(mtnds[count].mtAddr + "/" + deletingDir)
 			if !fstool.IsDir(loclDeleting) {
 				if err := fstool.MkdirAll(loclDeleting); nil != err {
 					panic("Create Folder Failed, Path: " + loclDeleting + ", " + err.Error())
@@ -85,7 +85,7 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 			}
 			if nil != dirs {
 				for i := 0; i < len(dirs); i++ {
-					err = fstool.RemoveAll(strtool.Parse2UnixPath(loclTemp + "/" + dirs[i]))
+					err = fstool.RemoveAll(filepath.Clean(loclTemp + "/" + dirs[i]))
 					if nil != err {
 						panic("Clear temps Failed, Error: " + err.Error())
 					}
@@ -97,7 +97,7 @@ func (mtg *mountManager) initMountItems(mounts map[string]interface{}) *mountMan
 			}
 			if nil != dirs {
 				for i := 0; i < len(dirs); i++ {
-					err := fstool.RemoveAll(strtool.Parse2UnixPath(loclDeleting + "/" + dirs[i]))
+					err := fstool.RemoveAll(filepath.Clean(loclDeleting + "/" + dirs[i]))
 					if nil != err {
 						panic("Clear temps Failed, Error: " + err.Error())
 					}
@@ -118,36 +118,36 @@ func (mtg *mountManager) getInterface(relativePath string) FileManage {
 		relativePath = "/"
 	}
 	// 挂载节点
-	recentMountNodes := mtg.getMountItem(relativePath)
-	// 解析 recentMountNodes
-	if recentMountNodes.mtPath == "" {
+	recentMountNode := mtg.getMountItem(relativePath)
+	// 解析 recentMountNode
+	if recentMountNode.mtPath == "" {
 		panic(errors.New("Mount path is not find"))
 	}
-	if recentMountNodes.mtAddr == "" {
-		panic(errors.New("Mount address is nil, at mount path: " + recentMountNodes.mtPath))
+	if recentMountNode.mtAddr == "" {
+		panic(errors.New("Mount address is nil, at mount path: " + recentMountNode.mtPath))
 	}
-	if recentMountNodes.mtType == "" {
+	if recentMountNode.mtType == "" {
 		panic(errors.New("Mount Type is not find"))
 	}
 	//
-	switch recentMountNodes.mtType {
+	switch recentMountNode.mtType {
 	case localTypeKey:
 		// 本地存储
-		return &localDriver{recentMountNodes, mtg}
+		return &localDriver{recentMountNode, mtg}
 	case ossTypeKey:
 		// oss对象存储
 		panic(errors.New("mtg type of partition mount type is not implemented: Oss"))
 	default:
 		// 不支持的分区挂载类型
-		panic(errors.New("Unsupported partition mount type: " + recentMountNodes.mtType))
+		panic(errors.New("Unsupported partition mount type: " + recentMountNode.mtType))
 	}
 }
 
 // getMountItem 查找相对路径下的分区挂载信息
-func (mtg *mountManager) getMountItem(relativePath string) mountNodes {
+func (mtg *mountManager) getMountItem(relativePath string) mountNode {
 	// 如果传入路径和挂载节点匹配, 则记录下来
 	pathLen := -1
-	var recentMountNodes mountNodes
+	var recentMountNode mountNode
 	for i := 0; i < len(mtg.mtnds); i++ {
 		// 如果挂载路径再传入路径的头部, 则认为有效
 		// "/"==>/A || /A==>/A || /A/==> /A/B/
@@ -157,12 +157,12 @@ func (mtg *mountManager) getMountItem(relativePath string) mountNodes {
 			// /A==>/A/B/C < /A/B==>/A/B/C
 			if pathLen < len(mtg.mtnds[i].mtPath) {
 				pathLen = len(mtg.mtnds[i].mtPath)
-				recentMountNodes = mtg.mtnds[i]
+				recentMountNode = mtg.mtnds[i]
 			}
 		}
 
 	}
-	return recentMountNodes
+	return recentMountNode
 }
 
 // findMountChild 查找符合当前路径下的子挂载分区路径 /==>/Mount
@@ -187,8 +187,8 @@ func (mtg *mountManager) findMountChild(relativePath string) (res []string) {
 	return res
 }
 
-// parseMountNodes 转换配置信息, 如: 相对路径转绝对路径
-func parseMountNodes(mi mountNodes) mountNodes {
+// parseMountNode 转换配置信息, 如: 相对路径转绝对路径
+func parseMountNode(mi mountNode) mountNode {
 
 	// 需要统一挂载类型大消息
 	mi.mtType = strings.ToUpper(mi.mtType)
@@ -204,8 +204,9 @@ func parseMountNodes(mi mountNodes) mountNodes {
 			if err != nil {
 				panic(err)
 			}
+		} else {
+			mi.mtAddr = filepath.Clean(mi.mtAddr)
 		}
-		mi.mtAddr = strtool.Parse2UnixPath(mi.mtAddr)
 	}
 	// 需要注意挂载路径的结尾符号 /
 	lastIndex := strings.LastIndex(mi.mtPath, "/")
@@ -218,7 +219,7 @@ func parseMountNodes(mi mountNodes) mountNodes {
 }
 
 // getAbsolutePath 处理路径拼接
-func getAbsolutePath(mountNode mountNodes, relativePath string) (abs string, rlPath string, err error) {
+func getAbsolutePath(mountNode mountNode, relativePath string) (abs string, rlPath string, err error) {
 	rlPath = relativePath
 	if "/" != mountNode.mtPath {
 		rlPath = relativePath[len(mountNode.mtPath):]
@@ -232,27 +233,27 @@ func getAbsolutePath(mountNode mountNodes, relativePath string) (abs string, rlP
 		0 == strings.Index(rlPath, "/"+sysDir+"/") {
 		return abs, rlPath, errors.New("Does not allow access: " + rlPath)
 	}
-	abs = strtool.Parse2UnixPath(mountNode.mtAddr + rlPath)
+	abs = filepath.Clean(mountNode.mtAddr + rlPath)
 	//fmt.Println( "getAbsolutePath: ", rlPath, abs )
 	return
 }
 
 // getRelativePath 获取相对路径
-func getRelativePath(mti mountNodes, absolute string) string {
+func getRelativePath(mti mountNode, absolute string) string {
 	// fmt.Println("getRelativePath: ", mti.mtAddr, absolute)
-	absolute = strtool.Parse2UnixPath(absolute)
+	absolute = filepath.Clean(absolute)
 	if strings.HasPrefix(absolute, mti.mtAddr) {
-		return strtool.Parse2UnixPath(mti.mtPath + "/" + absolute[len(mti.mtAddr):])
+		return filepath.Clean(mti.mtPath + "/" + absolute[len(mti.mtAddr):])
 	}
 	return absolute
 }
 
 // getAbsoluteTempPath 获取该分区下的缓存目录
-func getAbsoluteTempPath(mountNode mountNodes) string {
-	return strtool.Parse2UnixPath(mountNode.mtAddr + "/" + tempDir + "/" + strtool.GetUUID())
+func getAbsoluteTempPath(mountNode mountNode) string {
+	return filepath.Clean(mountNode.mtAddr + "/" + tempDir + "/" + strtool.GetUUID())
 }
 
 // getAbsoluteDeletingPath 获取一个放置删除文件的目录
-func getAbsoluteDeletingPath(mountNode mountNodes) string {
-	return strtool.Parse2UnixPath(mountNode.mtAddr + "/" + deletingDir + "/" + strconv.FormatInt(time.Now().UnixNano(), 10))
+func getAbsoluteDeletingPath(mountNode mountNode) string {
+	return filepath.Clean(mountNode.mtAddr + "/" + deletingDir + "/" + strconv.FormatInt(time.Now().UnixNano(), 10))
 }

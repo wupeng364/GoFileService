@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	// CHILDVISIBLE 子节点可见导致的父节点可见, 父节点其实并没有权限
-	CHILDVISIBLE = iota
+	// VISIBLECHILD 子节点可见导致的父节点可见, 父节点其实并没有权限
+	VISIBLECHILD = iota
 	// VISIBLE 可见
 	VISIBLE
 	// READ 只读

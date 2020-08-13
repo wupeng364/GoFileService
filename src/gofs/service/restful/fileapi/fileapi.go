@@ -157,7 +157,7 @@ func (fsapi *FileAPI) List(w http.ResponseWriter, r *http.Request) {
 		qAsc = "true"
 	}
 	userID := fsapi.sg.GetUserID4Request(r)
-	if !fsapi.checkPermision(userID, qpath, filepermission.VISIBLE) {
+	if !fsapi.checkPermision(userID, qpath, filepermission.VISIBLECHILD) {
 		httpserver.SendError(w, ErrorPermissionInsufficient)
 		return
 	}
@@ -166,14 +166,16 @@ func (fsapi *FileAPI) List(w http.ResponseWriter, r *http.Request) {
 		httpserver.SendError(w, err)
 		return
 	}
+	// 如果当前或上级路径有可见以上权限, 则文件默认可见
+	canVisible := fsapi.checkPermision(userID, qpath, filepermission.VISIBLE)
 	res := make([]filemanage.FsInfo, 0)
 	if len(list) > 0 {
 		for i := 0; i < len(list); i++ {
-			// if list[i].IsFile {
-			// 	res = append(res, list[i])
-			// 	continue
-			// }
-			if fsapi.checkPermision(userID, list[i].Path, filepermission.VISIBLE) {
+			if list[i].IsFile && canVisible {
+				res = append(res, list[i])
+				continue
+			}
+			if fsapi.checkPermision(userID, list[i].Path, filepermission.VISIBLECHILD) {
 				res = append(res, list[i])
 			}
 		}

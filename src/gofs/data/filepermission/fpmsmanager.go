@@ -61,24 +61,24 @@ func (fpmsmgr *FPmsManager) HashPermission(userID, path string, permission int64
 	}
 	val, ok := userPms[path]
 	if ok { // 是个文件夹&有记录
-		if permission == VISIBLE && val >= CHILDVISIBLE {
+		if permission == VISIBLECHILD && val >= VISIBLECHILD {
 			return true
 		}
 		if 1<<permission == val&(1<<permission) {
 			return true
 		}
-	} else { // 可能只是没有权限记录, 或者是个文件, 我们则需要尝试上级目录是否拥有>childvisible的权限
+	} else { // 可能只是没有权限记录, 或者是个文件, 我们则需要尝试上级目录是否拥有>VISIBLECHILD的权限
 		parent := path
 		for {
 			parent = parent[:strings.LastIndex(parent, "/")]
 			if len(parent) == 0 {
 				parent = "/"
 			}
-			// 如果从上级找到了权限, 则需要是>childvisible的权限
+			// 如果从上级找到了权限, 则需要是>VISIBLECHILD的权限
 			// 组最近的权限设定, 即便上级再上级有权限也不管
-			if val, ok := userPms[parent]; ok && val > CHILDVISIBLE {
+			if val, ok := userPms[parent]; ok && val > VISIBLECHILD {
 				// 如果上级有明确的权限, 则下级默认可见
-				if permission == VISIBLE {
+				if permission <= VISIBLE {
 					return true
 				}
 				// 计算
@@ -173,19 +173,19 @@ func (fpmsmgr *FPmsManager) loadPermission2Memory() {
 		// 当前用户&当前路径
 		list[i].Path = path.Clean(list[i].Path)
 		val[list[i].Path] = list[i].Permission
-		// 检查上级目录, 生成 childvisible 权限
+		// 检查上级目录, 生成 VISIBLECHILD 权限
 		parent := list[i].Path
 		for {
 			parent = parent[:strings.LastIndex(parent, "/")]
 			if len(parent) == 0 {
 				if _, ok := val["/"]; !ok {
-					val["/"] = CHILDVISIBLE
+					val["/"] = VISIBLECHILD
 				}
 				break
 			}
 			_, ok := val[parent]
 			if !ok {
-				val[parent] = CHILDVISIBLE
+				val[parent] = VISIBLECHILD
 			}
 		}
 	}

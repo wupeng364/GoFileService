@@ -21,7 +21,7 @@ import (
 
 // localDriver 本地文件挂载操作驱动
 type localDriver struct {
-	mountNode mountNodes
+	mountNode mountNode
 	mtm       *mountManager
 }
 
@@ -45,7 +45,7 @@ func (locl localDriver) IsFile(relativePath string) (bool, error) {
 
 // GetDirList 获取路径列表, 返回相对路径
 func (locl localDriver) GetDirList(relativePath string) ([]string, error) {
-	absPath, relativePath, err := getAbsolutePath(locl.mountNode, relativePath)
+	absPath, mRelativePath, err := getAbsolutePath(locl.mountNode, relativePath)
 	if err != nil {
 		return make([]string, 0), err
 	}
@@ -54,7 +54,7 @@ func (locl localDriver) GetDirList(relativePath string) ([]string, error) {
 		return make([]string, 0), locl.wrapError(err)
 	}
 	// 如果是挂载目录根目录, 需要处理 缓存目录
-	if relativePath == "/" {
+	if mRelativePath == "/" {
 		if ls != nil && len(ls) > 0 {
 			res := make([]string, 0)
 			for i := 0; i < len(ls); i++ {
@@ -324,18 +324,20 @@ func (locl localDriver) wrapError(err error) error {
 			if locl.mountNode.mtPath == "/" {
 				rStr = ""
 			}
-			errStr = strings.Replace(errStr, "\\", "/", -1)
+			//errStr = strings.Replace(errStr, "\\", "/", -1)
 			errStr = strings.Replace(errStr, locl.mountNode.mtAddr, rStr, -1)
-			return errors.New(errStr)
+			return errors.New(strings.Replace(errStr, "\\", "/", -1))
 		}
 	}
 	return err
 }
 
 // clearMountAddr 去除挂载目录的位置信息
-func clearMountAddr(srcMount, destMount mountNodes, err error) string {
+func clearMountAddr(srcMount, destMount mountNode, err error) string {
 	if nil != err {
-		errorStr := strings.Replace(err.Error(), "\\", "/", -1)
+		errorStr := err.Error()
+		//errorStr := strings.Replace(err.Error(), "\\", "/", -1)
+		has := false
 		if strings.Index(errorStr, srcMount.mtAddr) > -1 {
 			// /root/datas/a/b -> /a/b/a/b
 			rStr := srcMount.mtPath
@@ -343,6 +345,7 @@ func clearMountAddr(srcMount, destMount mountNodes, err error) string {
 				rStr = ""
 			}
 			errorStr = strings.Replace(errorStr, srcMount.mtAddr, rStr, -1)
+			has = true
 		}
 		if strings.Index(errorStr, destMount.mtAddr) > -1 {
 			rStr := destMount.mtPath
@@ -350,6 +353,10 @@ func clearMountAddr(srcMount, destMount mountNodes, err error) string {
 				rStr = ""
 			}
 			errorStr = strings.Replace(errorStr, destMount.mtAddr, rStr, -1)
+			has = true
+		}
+		if has {
+			errorStr = strings.Replace(errorStr, "\\", "/", -1)
 		}
 		return errorStr
 	}

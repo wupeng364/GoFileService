@@ -159,12 +159,12 @@ func (signature *Signature) RestfulAPIFilter(w http.ResponseWriter, r *http.Requ
 	}
 	// 从请求中获取accessKey, 不能为空
 	accessKey := r.Header.Get(RequestHeaderAccessKey)
-	if len(accessKey) == 0 {
+	if len(accessKey) == 0 && len(r.Form[RequestHeaderAccessKey]) > 0 {
 		accessKey = r.Form[RequestHeaderAccessKey][0]
 	}
 	// 从请求中获取signature, 不能为空
 	sign := r.Header.Get(RequestHeaderSign)
-	if len(sign) == 0 {
+	if len(sign) == 0 && len(r.Form[RequestHeaderSign]) > 0 {
 		sign = r.Form[RequestHeaderSign][0]
 	}
 
