@@ -17,10 +17,71 @@
 	}
 }(this, function ( ){
 	let api = { sync:{} };
-
+	api.$TYPE = {
+		// VISIBLECHILD 子节点可见导致的父节点可见, 父节点其实并没有权限
+		VISIBLECHILD: { name: '子节点可见', value: 0},
+		// VISIBLE 可见
+		VISIBLE: { name: '可见', value: 1},
+		// READ 只读
+		READ: { name: '只读', value: 2},
+		// WRITE 可写
+		WRITE: { name: '可写', value: 3},
+	};
+	api.$TYPE.__proto__ = {
+		// 是否包含某权限
+		sumInclude: function(sum, p){
+			sum = Number(sum); p = Number(p);
+			if(undefined == sum || sum < 0 ||
+				undefined == p || p < 0 ){
+					return false;
+			}
+			if( sum == 0 && sum >=0 ){
+				return true;
+			}
+			return 1<<p == (sum & (1<<p));
+		},
+		// 转换为描述文字
+		sum2Name: function(sum){
+			let res = [];
+			if( undefined != sum && sum > 0 ){
+				for(let key in api.$TYPE){
+					if(key == api.$TYPE.VISIBLECHILD.name || 
+						!api.$TYPE.hasOwnProperty(key) ){
+						continue;
+					}
+					if(api.$TYPE.sumInclude(sum, api.$TYPE[key].value)){
+						res.push(api.$TYPE[key].name);
+					}
+				}
+			}
+			if(res.length == 0){
+				if(api.$TYPE.sumInclude(sum, api.$TYPE.VISIBLECHILD.value)){
+					res.push(api.$TYPE.VISIBLECHILD.name);
+				}
+			}
+			return res;
+		},
+		// 计算权限结果值
+		list2Sum: function( pms ){
+			let res = -1;
+			if(pms && pms.length >0){
+				for(let i=0; i<pms.length; i++){
+					res += 1<<Number(pms[i]);
+				}
+			}
+			return res;
+		},
+	};
 	// listFPermissions
 	api.listFPermissions = function( ){
 		return $apitools.apiPost("/fpms/listfpermissions", { })
+	};
+	// GetUserPermissionSum
+	api.GetUserPermissionSum = function( userid, paths ){
+		return $apitools.apiPost("/fpms/getuserpermissionsum", {
+			userid: userid?userid:'', 
+			paths: paths?JSON.stringify(paths):''
+		})
 	};
 	// listUserFPermissions
 	api.listUserFPermissions = function( userid ){

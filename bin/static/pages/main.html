@@ -59,14 +59,14 @@
     <div ref='fslist-body' style="height: 100%">
       <div style="padding: 5px 20px 5px 5px;border-bottom: 1px solid #dcdee2;">
           <div>
-              <i-button type="text" icon='md-refresh-circle' @click="doRefresh">刷新</i-button>
-              <i-button type="text" icon='md-cloud-upload' v-show="fsOperationButtons.shows.upload" @click="fsUpload.showDrawer = true">上传</i-button>
-              <i-button type="text" icon='md-add-circle' v-show="fsOperationButtons.shows.newFolder" @click="onNewFolder">新建文件夹</i-button>
-              <i-button type="text" icon='md-download' v-show="fsOperationButtons.shows.download" @click="doDownload">下载</i-button>
-              <i-button type="text" icon='ios-create' v-show="fsOperationButtons.shows.rename" @click="onRename">重命名</i-button>
-              <i-button type="text" icon='md-move' v-show="fsOperationButtons.shows.move" @click="doMove">移动</i-button>
-              <i-button type="text" icon='ios-copy' v-show="fsOperationButtons.shows.copy" @click="doCopy">复制</i-button>
-              <i-button type="text" icon='md-trash' v-show="fsOperationButtons.shows.delete" @click="doDelete">删除</i-button>
+              <i-button type="text" :icon='fsOperationButtons.refresh.icon' v-show='fsOperationButtons.refresh.show' @click='fsOperationButtons.refresh.handler'>{{fsOperationButtons.refresh.name}}</i-button>
+              <i-button type="text" :icon='fsOperationButtons.upload.icon' v-show='fsOperationButtons.upload.show' @click='fsOperationButtons.upload.handler'>{{fsOperationButtons.upload.name}}</i-button>
+              <i-button type="text" :icon='fsOperationButtons.newFolder.icon' v-show='fsOperationButtons.newFolder.show' @click='fsOperationButtons.newFolder.handler'>{{fsOperationButtons.newFolder.name}}</i-button>
+              <i-button type="text" :icon='fsOperationButtons.download.icon' v-show='fsOperationButtons.download.show' @click='fsOperationButtons.download.handler'>{{fsOperationButtons.download.name}}</i-button>
+              <i-button type="text" :icon='fsOperationButtons.rename.icon' v-show='fsOperationButtons.rename.show' @click='fsOperationButtons.rename.handler'>{{fsOperationButtons.rename.name}}</i-button>
+              <i-button type="text" :icon='fsOperationButtons.move.icon' v-show='fsOperationButtons.move.show' @click='fsOperationButtons.move.handler'>{{fsOperationButtons.move.name}}</i-button>
+              <i-button type="text" :icon='fsOperationButtons.copy.icon' v-show='fsOperationButtons.copy.show' @click='fsOperationButtons.copy.handler'>{{fsOperationButtons.copy.name}}</i-button>
+              <i-button type="text" :icon='fsOperationButtons.delete.icon' v-show='fsOperationButtons.delete.show' @click='fsOperationButtons.delete.handler'>{{fsOperationButtons.delete.name}}</i-button>
           </div>
       </div>
       <div style="height: 30px;line-height: 30px;padding-left: 20px;">
@@ -83,6 +83,7 @@
       <fs-movefile :src-paths='fsMoveFile.srcPaths' :dest-path='fsMoveFile.destPath' :move-settings='fsMoveFile.moveSettings' :show-dailog='fsMoveFile.showDailog' @on-error='onHiddenMove' @on-stop='onHiddenMove' @on-end='onHiddenMove'></fs-movefile>
       <!-- 选择目录 -->
       <fs-selector :select-muti="fsSelector.selectMuti" :select-file="fsSelector.selectFile" :select-dir="fsSelector.selectDir" :start-path="fsSelector.startPath" :show-dailog="fsSelector.showDailog" @on-select="onSelectedFile" @on-cancel="onSelectCancel"></fs-selector>
+      <right-click-menu bind-ref='fsSelection' :menus="fsOperationButtons"></right-click-menu>
     </div>
   </template>
 
@@ -196,10 +197,10 @@
 </body>
 <script type="text/javascript">
   // 文件列表模板
-  var fsList = Vue.extend({
+  let fsList = Vue.extend({
     template: "#fslist",
     data: function( ){
-      var _ = this;
+      let _ = this;
       return {
         fsCopyFile: {
           showDailog: false,
@@ -263,6 +264,7 @@
           {
               title: '修改时间',
               key: 'CtTime',
+              maxWidth: 160,
               render:function (h, params){
                 return h("span", $utils.long2Time(params.row.CtTime));
               }
@@ -270,6 +272,7 @@
           {
               title: '文件大小',
               key: 'FileSize',
+              maxWidth: 160,
               render:function (h, params){
                 if( params.row.IsFile ){
                   return h("span", $utils.formatSize(params.row.FileSize));
@@ -277,23 +280,28 @@
                   h("span", "");
                 }
               }
+          },
+          {
+              title: '操作权限',
+              key: 'PermissionText',
+              maxWidth: 280,
           }
         ],
         fsData:[],
         fsData_All: [],
         fsData_Total: 0,
-        fsData_PageSize: 60,
+        fsData_PageSize: 40,
         fsData_CurrentPageIndex: 1,
+        permissionsMap: {},
         fsOperationButtons:{
-          shows: {
-            newFolder: true,
-            upload: false,
-            download:false,
-            rename: false,
-            delete: false,
-            move: false,
-            copy: false,
-          }
+          refresh: {name: '刷新', show: true, handler: function( ){_.doRefresh( );}, icon: 'ivu-icon ivu-icon-md-refresh-circle', divided: false },
+          upload: {name: '上传', show: false, handler: function( ){_.fsUpload.showDrawer = true;}, icon: 'ivu-icon ivu-icon-md-cloud-upload', divided: false },
+          newFolder: {name: '文件夹', show: false, handler: function( ){_.onNewFolder( );}, icon: 'ivu-icon ivu-icon-md-add-circle', divided: false },
+          download: {name: '下载', show: false, handler: function( ){_.doDownload( );}, icon: 'ivu-icon ivu-icon-md-download', divided: false },
+          rename: {name: '重命名', show: false, handler: function( ){_.onRename( );}, icon: 'ivu-icon ivu-icon-ios-create', divided: false },
+          move: {name: '移动', show: false, handler: function( ){_.doMove( );}, icon: 'ivu-icon ivu-icon-md-move', divided: false },
+          copy: {name: '复制', show: false, handler: function( ){_.doCopy( );}, icon: 'ivu-icon ivu-icon-ios-copy', divided: false },
+          delete: {name: '删除', show: false, handler: function( ){_.onDelete( );}, icon: 'ivu-icon ivu-icon-md-trash', divided: false },
         }
       }
       },
@@ -303,34 +311,61 @@
         doRefresh: function( ){
            this.doLoadData( this.fsAddress.loadPath );
         },
-        loadDatePage: function( index ){
-          this.fsData_Total = this.fsData_All.length;
-          this.fsData_CurrentPageIndex = index?index:1;
-          var _end   = this.fsData_CurrentPageIndex*this.fsData_PageSize;
-          var _start = (this.fsData_CurrentPageIndex-1)*this.fsData_PageSize;
-          this.fsData = this.fsData_All.slice(_start>0?_start:0, _end);
-        },
         doLoadData: function( path ){
           if( this.loading ){ return; }
-          var _ = this;
+          let _ = this;
           _.loading = true;
           this.onSelectionChange([], {});
+          this.fsData_All = []; this.fsData = [];
           $fsApi.List( path ).then(function( data ){
             _.fsData_All = JSON.parse(data);
             _.fsData_CurrentPageIndex = 1;
             _.loadDatePage( );
-            _.loading = false;
+            // _.loading = false;
           }).catch(function(err){
             _.loading = false;
             _.$Message.error(err.toString( ));
           });
-        },   
-
+        },
+        loadDatePage: function( index ){
+          this.fsData_Total = this.fsData_All.length;
+          this.fsData_CurrentPageIndex = index?index:1;
+          let _end   = this.fsData_CurrentPageIndex*this.fsData_PageSize;
+          let _start = (this.fsData_CurrentPageIndex-1)*this.fsData_PageSize;
+          let fsData = this.fsData_All.slice(_start>0?_start:0, _end);
+          this.doWarpPermission(fsData);
+        },
+        // 包裹权限信息 
+        doWarpPermission: function( datas ){
+          if(!datas || datas.length == 0){
+            this.loading = false; return;
+          }
+          this.permissionsMap = {};
+          let paths = [this.fsAddress.loadPath];
+          datas.forEach(function(row){ paths.push(row.Path); });
+          let _ = this;
+          $fpmsApi.GetUserPermissionSum($apitools.getSession().UserID, paths).then(function(pms){
+            _.permissionsMap = pms?JSON.parse(pms):{};
+            for(let i=0; i<datas.length; i++){
+              datas[i].Permission = undefined != _.permissionsMap[datas[i].Path]?_.permissionsMap[datas[i].Path]:-1;
+              datas[i].PermissionText = $fpmsApi.$TYPE.sum2Name(datas[i].Permission).join(', ');
+            }
+            _.fsData = datas;
+            _.onSelectionChange();
+            _.loading = false;
+          }).catch(function(err){
+            _.loading = false;
+            _.$Message.error(err.toString());
+          });
+        },
         /* 重命名 */
         doRename: function( index, row, name ){
           row.showRename = false;
           this.$set(this.fsData, index, row);
-          var _ = this;
+          if(!name || row.Path.getName( ) == name){
+            return;
+          }
+          let _ = this;
           $fsApi.Rename(row.Path, name).then(function( ){
             _.$Message.info("操作成功");
             _.doRefresh( );
@@ -341,7 +376,10 @@
         },
         /** 新建文件夹 */
         doNewFolder: function( index, row, name ){
-          var _ = this;
+          if(!name){
+            this.doRefresh( ); return;
+          }
+          let _ = this;
           $fsApi.NewFolder(this.fsAddress.loadPath+"/"+name).then(function( ){
             _.$Message.info("操作成功");
             _.doRefresh( );
@@ -350,18 +388,28 @@
              _.doRefresh( );
           });
         },
+        onDelete: function( ){
+          let _ = this;
+          this.$Modal.confirm({
+            title: '删除文件',
+            content: '此操作不可逆, 是否继续删除?',
+            onOk: function( ){
+              _.doDelete( );
+            }
+          });
+        },
         /* 删除文件|文件夹 */
         doDelete: function( ){
-          var select = this.$refs.fsSelection.getSelection( );
+          let select = this.$refs.fsSelection.getSelection( );
           if( !select || select.length ==0 ){
             return;
           }
-          var del_loading = this.$Message.loading({
+          let del_loading = this.$Message.loading({
               content: "正在删除...",
               duration: 0
           });
-          var errs = [];
-          var _ = this;
+          let errs = [];
+          let _ = this;
           function loop( i ){
             if( !i ){ i = 0; }
             if( i == select.length ){ 
@@ -412,16 +460,16 @@
         },
         /* 下载单个|多个文件 */
         doDownload: function( ){
-          var select = this.$refs.fsSelection.getSelection( );
+          let select = this.$refs.fsSelection.getSelection( );
           if( !select || select.length == 0 ){
             return;
           }
-          var _ = this;
-          for (var i = select.length - 1; i >= 0; i--) {
+          let _ = this;
+          for (let i = select.length - 1; i >= 0; i--) {
             if( !select[i].IsFile ){ continue; }
             $fsApi.GetDownloadUrl( select[i].Path ).then(function(data){
               _.$nextTick(function( ){
-                var download = document.createElement("iframe");
+                let download = document.createElement("iframe");
                 download.src = data;
                 document.body.appendChild(download);
               });
@@ -432,12 +480,12 @@
         },
         /* 重命名文件|文件夹 */
         onRename: function( ){
-          var select = this.$refs.fsSelection.getSelection( );
+          let select = this.$refs.fsSelection.getSelection( );
           if( !select || select.length == 0 ){
             return;
           }
           select[0].showRename = true;
-          for (var i = 0; i < this.fsData.length; i++) {
+          for (let i = 0; i < this.fsData.length; i++) {
             if(this.fsData[i].Path == select[0].Path){
               this.$set(this.fsData, i, select[0]);
             }
@@ -448,7 +496,7 @@
           if( !node.IsFile ){
             this.goToPath( node.Path )
           }else{
-            var _ = this;
+            let _ = this;
             $preview.doPreview(node.Path).catch(function(err){
               $fsApi.GetSteamUrl( node.Path ).then(function(data){
                 _.$nextTick(function( ){
@@ -471,7 +519,7 @@
         },
         /** 新建文件 */
         onNewFolder: function( ){
-          var temp = this.fsData;
+          let temp = this.fsData;
           temp.unshift({
             "Path": "",
             "IsFile": false,
@@ -480,7 +528,6 @@
           });
           this.$set(this, "fsData", temp);
         },
-
         /* 选择单个文件夹 - OK */
         onSelectedFile: function( rows ){
           this.fsSelector.showDailog = false;
@@ -513,7 +560,7 @@
         },
         // 点击一行
         onRowClick: function(row, index){
-          for (var i = 0; i < this.fsData.length; i++) {
+          for (let i = 0; i < this.fsData.length; i++) {
             if( this.fsData[i]._checked && index != i ){
               this.$set( this.fsData[i], "_checked", false);
             }
@@ -524,24 +571,42 @@
         // 当Checkbox数据发生变化, 则需要刷新按钮
         onSelectionChange: function( selection, row ){
           // 处理按钮是否显示
-          {
-            this.fsOperationButtons.shows.download = false;
-            this.fsOperationButtons.shows.rename = false;
-            this.fsOperationButtons.shows.delete = false;
-            this.fsOperationButtons.shows.move = false;
-            this.fsOperationButtons.shows.copy = false;
-            var len_selection = selection.length;
-            // 选择一个或者以上
-            if( len_selection >= 1){
-              this.fsOperationButtons.shows.download = true;
-              this.fsOperationButtons.shows.delete = true;
-              this.fsOperationButtons.shows.move = true;
-              this.fsOperationButtons.shows.copy = true;
-
+          this.fsOperationButtons.upload.show = false;
+          this.fsOperationButtons.newFolder.show = false;
+          this.fsOperationButtons.download.show = false;
+          this.fsOperationButtons.rename.show = false;
+          this.fsOperationButtons.delete.show = false;
+          this.fsOperationButtons.move.show = false;
+          this.fsOperationButtons.copy.show = false;
+          let len_selection = selection?selection.length:0;
+          // 计算上级文件夹权限
+          if(undefined != this.permissionsMap[this.fsAddress.loadPath] && 
+              $fpmsApi.$TYPE.sumInclude(this.permissionsMap[this.fsAddress.loadPath], $fpmsApi.$TYPE.WRITE.value)){
+            this.fsOperationButtons.upload.show = true;
+            this.fsOperationButtons.newFolder.show = true;
+          }
+          // 选择一个或者以上
+          if( len_selection >= 1){
+            let read = false; let fileCount = 0;
+            for(let i=0; i<selection.length; i++){
+              if(selection[i].IsFile){ fileCount ++; }
+              read = $fpmsApi.$TYPE.sumInclude(selection[i].Permission, $fpmsApi.$TYPE.READ.value);
+              if(!read){ read = false; break; }
             }
-            // 只选择了一个
-            if( len_selection == 1 ){
-              this.fsOperationButtons.shows.rename = true;
+            if(read){
+              this.fsOperationButtons.download.show = fileCount == selection.length;
+              this.fsOperationButtons.copy.show = true;
+            }
+            // 
+            let write = false;
+            for(let i=0; i<selection.length; i++){
+              write = $fpmsApi.$TYPE.sumInclude(selection[i].Permission, $fpmsApi.$TYPE.WRITE.value);
+              if(!write){ write = false; break; }
+            }
+            if(write){
+              this.fsOperationButtons.rename.show = len_selection == 1;
+              this.fsOperationButtons.move.show = true;
+              this.fsOperationButtons.delete.show = true;
             }
           }
         },
@@ -549,7 +614,24 @@
       mounted: function( ){ },
       created: function( ){
         this.goToPath(this.fsAddress.rootPath);
-        this.fsOperationButtons.shows.upload = true;
+        this.fsOperationButtons.upload.show = true;
+        let _ = this;
+        this.$nextTick(function( ){
+          $utils.areaCover({
+            background: _.$refs.fsSelection.$el, 
+            coverfilter: '.ivu-table-row', 
+            onCover: function(el){
+              if(!el.querySelector('.ivu-checkbox-input').checked){
+                el.querySelector('.ivu-checkbox-input').click( );
+              }
+            },
+            onUnCover: function(el){
+              if(el.querySelector('.ivu-checkbox-input').checked){
+                el.querySelector('.ivu-checkbox-input').click( );
+              }
+            }
+          })
+        })
       },
       watch:{
         'fsAddress.loadPath':function(n, o){
@@ -558,7 +640,7 @@
       }
   });
   // 设置
-  var settings = Vue.extend({
+  let settings = Vue.extend({
     template:"#settings",
     data: function(){
       let _ = this;
@@ -625,7 +707,7 @@
             _.userManage.shows.add = true;
             _.userManage.shows.del = false;
             _.userManage.shows.edit = false;
-            var len_selection = selection.length;
+            let len_selection = selection.length;
             // 选择一个或者以上
             if( len_selection >= 1){
               _.userManage.shows.del = true;
@@ -678,6 +760,9 @@
             {
                 title: '权限类型',
                 key: 'Permission',
+                render: function(h, c){
+                  return h('span', {}, $fpmsApi.$TYPE.sum2Name(c.row.Permission).join(', '));
+                },
             },
             {
                 title: '创建时间',
@@ -695,7 +780,7 @@
             _.fPermissionManage.shows.add = true;
             _.fPermissionManage.shows.del = false;
             _.fPermissionManage.shows.edit = false;
-            var len_selection = selection.length;
+            let len_selection = selection.length;
             // 选择一个或者以上
             if( len_selection >= 1){
               _.fPermissionManage.shows.del = true;
@@ -765,13 +850,13 @@
     },
     computed: {
       calcUserManagePageDatas: function( ){
-        var _end   = this.userManage.currentPageIndex*this.userManage.pageSize;
-        var _start = (this.userManage.currentPageIndex-1)*this.userManage.pageSize;
+        let _end   = this.userManage.currentPageIndex*this.userManage.pageSize;
+        let _start = (this.userManage.currentPageIndex-1)*this.userManage.pageSize;
         return this.userManage.datas.slice(_start>0?_start:0, _end);
       },
       calcFPermissionManage: function( ){
-        var _end   = this.fPermissionManage.currentPageIndex*this.fPermissionManage.pageSize;
-        var _start = (this.fPermissionManage.currentPageIndex-1)*this.fPermissionManage.pageSize;
+        let _end   = this.fPermissionManage.currentPageIndex*this.fPermissionManage.pageSize;
+        let _start = (this.fPermissionManage.currentPageIndex-1)*this.fPermissionManage.pageSize;
         return this.fPermissionManage.datas.slice(_start>0?_start:0, _end);
       },
     },
@@ -1018,14 +1103,14 @@
 </script>
 <script type="text/javascript">
   // 页面路由
-  var router = new VueRouter({
+  let router = new VueRouter({
     routes: [
       { path: '/files', component: fsList },
       { path: '/settings', component: settings },
     ]
   });
 
-  var v = new Vue({
+  let v = new Vue({
     router : router,
     data: function( ){
       return {

@@ -55,19 +55,27 @@ func (fpmsmgr *FPmsManager) ModuleOpts() mloader.Opts {
 
 // HashPermission 是否拥有某个权限
 func (fpmsmgr *FPmsManager) HashPermission(userID, path string, permission int64) bool {
-	userPms := fpmsmgr.getUserPermissionInMemory(userID)
-	if len(userPms) == 0 {
+	userPermission := fpmsmgr.GetUserPermissionSum(userID, path)
+	if userPermission < VISIBLECHILD {
 		return false
 	}
+	// 子节点可见导致的父节点可见, 父节点其实并没有权限
+	if permission == VISIBLECHILD && userPermission >= VISIBLECHILD {
+		return true
+	}
+	return 1<<permission == userPermission&(1<<permission)
+}
+
+// GetUserPermissionSum 获取用户对路径拥有的权限数值
+// -1 为无权限 > -1 为有权限
+func (fpmsmgr *FPmsManager) GetUserPermissionSum(userID, path string) int64 {
+	userPms := fpmsmgr.getUserPermissionInMemory(userID)
+	if len(userPms) == 0 {
+		return -1
+	}
 	val, ok := userPms[path]
-	if ok { // 是个文件夹&有记录
-		if permission == VISIBLECHILD && val >= VISIBLECHILD {
-			return true
-		}
-		if 1<<permission == val&(1<<permission) {
-			return true
-		}
-	} else { // 可能只是没有权限记录, 或者是个文件, 我们则需要尝试上级目录是否拥有>VISIBLECHILD的权限
+	if !ok {
+		// 可能只是没有权限记录, 或者是个文件, 我们则需要尝试上级目录是否拥有>VISIBLECHILD的权限
 		parent := path
 		for {
 			parent = parent[:strings.LastIndex(parent, "/")]
@@ -77,24 +85,16 @@ func (fpmsmgr *FPmsManager) HashPermission(userID, path string, permission int64
 			// 如果从上级找到了权限, 则需要是>VISIBLECHILD的权限
 			// 组最近的权限设定, 即便上级再上级有权限也不管
 			if val, ok := userPms[parent]; ok && val > VISIBLECHILD {
-				// 如果上级有明确的权限, 则下级默认可见
-				if permission <= VISIBLE {
-					return true
-				}
-				// 计算
-				if 1<<permission == val&(1<<permission) {
-					return true
-				}
-				return false
+				return val
 			}
 			// 如果没有找到, 则继续网上找, 如果到/还没有, 则无权限
 			if parent == "/" {
-				return false
+				return -1
 			}
 		}
 	}
-
-	return false
+	// 是个文件夹&有记录
+	return val
 }
 
 // ListFPermissions 列出所有权限数据, 无分页

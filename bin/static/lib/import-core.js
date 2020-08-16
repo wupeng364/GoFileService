@@ -33,6 +33,7 @@ if(typeof __import_core__=="undefined"){
 			document.ondragover  = function( Even ){ Even.preventDefault( ); Even.stopPropagation( ); };
 			document.ondragleave = function( Even ){ Even.preventDefault( ); Even.stopPropagation( ); };
 			document.ondragenter = function( Even ){ Even.preventDefault( ); Even.stopPropagation( ); };
+			document.oncontextmenu = function( Even ){ Even.preventDefault( ); Even.stopPropagation( ); };
 		}catch( Err_Catch ){ }
 	};
 }//endif

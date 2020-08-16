@@ -17,7 +17,7 @@
 })(function( ){
 	"use strict";
 	// 自动适应高度, 自动减去某个值
-	Vue.directive('minus-height',{
+	Vue.directive('minus-height', {
 		// 绑定钩子函数
 		bind: function (el,binding,vnode){	
 		},
@@ -57,6 +57,91 @@
 		// 解除指令 
 		unbind: function( el, binding, vnode ){
 			vnode.v_UnBindMinusHeight();
+		}
+	});
+	// 
+	/**
+	 * 右键菜单
+	 * menus = {id: {name: 'xxx', icon:'', show:true, handler: func, divided:false, }}
+	 */
+	Vue.component("right-click-menu",{
+		props:['bindRef', 'menus'],
+		data:function(){
+			return{
+				posX: 0,
+				posY: 0,
+				currentVisible: false
+			}
+		},
+		template:""+
+		"         <Dropdown :style='locatorStyle' placement='right-start' trigger='custom' :visible='currentVisible' @on-click='onClick' @on-clickoutside='handleCancel'>"+
+		"         	<Dropdown-Menu slot='list'>"+
+		"         		<Dropdown-Item v-for='(val, key) in menus' v-show='val.show' :name='key' :divided='val.divided'><i v-if='val.icon' :class='val.icon' style='padding-right: 3px;'></i><span style='vertical-align: middle;'>{{val.name}}</span></Dropdown-Item>"+
+		"         	</Dropdown-Menu>"+
+		"         </Dropdown>",		
+		computed: {
+			locatorStyle: function( ){
+				return {
+					position: 'fixed',
+					left: this.posX+'px',
+					top: this.posY+'px',
+					maxHeight:'unset'
+				}
+			}
+		},
+		methods: {
+			onClick: function(name){
+				this.currentVisible = false
+				if(this.menus[name] && this.menus[name].handler){
+					try {
+						this.menus[name].handler( this.menus[name] );
+					} catch (e) {console.error(e);}
+				}
+			},
+			handleContextmenu: function(e) {
+				e.returnValue = false;
+				e.stopPropagation();
+				this.currentVisible = false;
+				let _ = this;
+				if(e.button === 2) {
+					if (this.posX !== e.clientX){ this.posX = e.clientX; }
+					if (this.posY !== e.clientY){ this.posY = e.clientY; }
+					this.$nextTick(function( ){
+						_.currentVisible = true;
+					});
+				}
+			},
+			handleCancel: function( ){
+				this.currentVisible = false
+			},
+			getRefNode: function( ){
+				if(!this.bindRef){
+					return document;
+				}
+				let node = this;
+				while(true){
+					if(node.$refs[this.bindRef]){
+						break;
+					}
+					node = node.$parent;
+					if(!node){ break; }
+				}
+				return node?node.$refs[this.bindRef].$el:{};
+			},
+		},
+		mounted: function( ){
+			let node = this.getRefNode();
+			node.addEventListener('contextmenu', this.handleContextmenu, false);
+			node.addEventListener('mouseup', this.handleContextmenu, false);
+		},
+		destroyed: function( ){
+			try {
+				// let node = this.getRefNode();
+				// node.removeEventListener('contextmenu', this.handleContextmenu, false);
+				// node.removeEventListener('mouseup', this.handleContextmenu, false);
+			} catch (e) { }
+		},
+		watch: {
 		}
 	});
 });

@@ -436,5 +436,94 @@
 			return uploader;
 		},
 	});
+	
+	// 一些特殊的DOM效果工具
+	utils.extendAttrs(utils, {
+		/**
+		 * areaCover: 长按鼠标左键, 拖动鼠标, 生成一个覆盖层并显示覆盖的面积, 通过事件传递被覆盖的对象. 类似于windows多选
+		 * 注: 滚动条情况未考虑
+		 * opts={background:document.getElementById(''), coverfilter: '.coverfilter', onCover: function(el), onUnCover: function(el)}
+		 */
+		areaCover: function( opts ){
+			let domousemove; let cancelmousemove;
+			// css
+			opts.background.style.userSelect = 'none';
+			opts.background.style.webkitUserSelect = 'none';
+			// 鼠标按下开始
+			opts.background.onmousedown = function(ev){
+				let e=ev||event; e.stopPropagation();
+				try{
+					// 重置事件
+					if( domousemove ){ opts.background.removeEventListener("mousemove", domousemove, false); }
+					if( cancelmousemove ){ opts.background.removeEventListener("mouseup", cancelmousemove, false); }
+					let mouse_box = document.getElementById("mouse-box");
+					if( mouse_box ){ opts.background.removeChild( mouse_box ); }
+				}catch(err){ }
+				// 
+				if( e.target.tagName != "DIV" ){ return; }
+				if( e.which == 2 ){ return; }
+				let brect = opts.background.getBoundingClientRect?opts.background.getBoundingClientRect():{x:0,y:0};
+				let disX = e.clientX - brect.x;
+				let disY = e.clientY - brect.y;
+				let oDiv = document.createElement('div');//鼠标选框
+				oDiv.id='mouse-box';
+				oDiv.style.background = "#e9f3fd";
+				oDiv.style.border = "1px dashed #000";
+				oDiv.style.position = "absolute";
+				oDiv.style.opacity = "0.6";
+				oDiv.style.filter = "alpha(opacity=60)";
+				opts.background.appendChild(oDiv);
+			
+				// 鼠标移动事件
+				domousemove = function(ev){
+					let e = ev||event;
+					e.stopPropagation();
+					let brect = opts.background.getBoundingClientRect?opts.background.getBoundingClientRect():{x:0,y:0};
+					let x = e.clientX - brect.x - disX;
+					let y = e.clientY - brect.y - disY;
+					let iWidth = Math.abs(x);
+					let iHeight = Math.abs(y); 
+					oDiv.style.left = x>0 ? disX+'px' : e.clientX - brect.x + 'px';
+					oDiv.style.top = y>0 ? disY+'px' : e.clientY - brect.y + 'px';
+					oDiv.style.width = iWidth+'px';
+					oDiv.style.height = iHeight+'px';
+					// 鼠标选框碰撞检测 
+					let L1 = oDiv.getBoundingClientRect( ).left;
+					let T1 = oDiv.getBoundingClientRect( ).top;
+					let R1 = oDiv.getBoundingClientRect( ).right;
+					let B1 = oDiv.getBoundingClientRect( ).bottom;
+					// 
+					let list = opts.background.querySelectorAll(opts.coverfilter);
+					if(list && list.length > 0){
+						for(let i=0; i<list.length; i++){
+							// 当前图标坐标
+							let L2 = list[i].getBoundingClientRect( ).left;
+							let T2 = list[i].getBoundingClientRect( ).top;
+							let R2 = list[i].getBoundingClientRect( ).right;
+							let B2 = list[i].getBoundingClientRect( ).bottom;
+							// 触发事件
+							if (!(R1 < L2 || B1 < T2 || L1 > R2 || T1 > B2)){
+								opts.onCover(list[i]);
+							}else{
+								opts.onUnCover(list[i]);
+							}
+						}
+					}
+				};
+				// 取消鼠标移动事件
+				cancelmousemove = function(ev){
+					try{
+						if( domousemove ){ opts.background.removeEventListener("mousemove", domousemove, false); }
+						let mouse_box = document.getElementById("mouse-box");
+						if( mouse_box ){ opts.background.removeChild( mouse_box ); }
+					}catch(err){ console.error(err); }
+				};
+				// 鼠标开始移动
+				opts.background.addEventListener("mousemove", domousemove, false);
+				// 松开鼠标, 事件结束
+				opts.background.addEventListener("mouseup", cancelmousemove, false ); 
+			};
+		}
+	});
 	return utils;
 }));

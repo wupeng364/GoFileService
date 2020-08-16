@@ -9,7 +9,7 @@ gofs支持简单的路径挂载, 文件基本操作(CRUD). 通过集成aplayer�
 * 文件虚拟路径挂载
 ![挂载路径](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/mount.png "挂载路径")
 * 文件的基本操作(CRUD)
-![文件的基本操作](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/filelist.png "文件的基本操作")
+![文件的基本操作](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/filelist.gif "文件的基本操作")
 * 用户管理(CRUD)
 ![用户管理](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/user.png "用户管理")
 * 图片浏览

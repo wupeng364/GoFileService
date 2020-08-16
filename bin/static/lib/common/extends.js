@@ -65,14 +65,9 @@
 	// 得到父级路径 
 	String.prototype.getParent = function( ){
 		let temp = this.getPath(  ); 
-		if( temp.indexOf("/") > -1 ){
-			temp = temp.substring(0,temp.lastIndexOf("/"));
-			temp = (temp == ""?"/":temp);
-		}else{
-			temp = temp.substring(0,temp.lastIndexOf("\\"));
-			temp = (temp == ""?"\\":temp);
-		}
-		return temp;
+		if('' == temp){ return '/'; }
+		temp = temp.substring(0,temp.lastIndexOf("/"));
+		return temp == ""?"/":temp;
 	};
 	// 得到名字
 	String.prototype.getName = function( B_GetSuffixed ){

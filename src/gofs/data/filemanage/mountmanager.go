@@ -17,9 +17,7 @@ import (
 	"gutils/fstool"
 	"gutils/strtool"
 	"path/filepath"
-	"strconv"
 	"strings"
-	"time"
 )
 
 // 常量
@@ -209,51 +207,8 @@ func parseMountNode(mi mountNode) mountNode {
 		}
 	}
 	// 需要注意挂载路径的结尾符号 /
-	lastIndex := strings.LastIndex(mi.mtPath, "/")
-	if lastIndex > 0 && lastIndex == len(mi.mtPath)-1 {
-		mi.mtPath = mi.mtPath[0:lastIndex]
-	}
+	mi.mtPath = strtool.Parse2UnixPath(mi.mtPath)
 	mi.depth = len(strings.Split(mi.mtPath, "/")) - 1
 	fmt.Println("   > Mounting partition: ", mi)
 	return mi
-}
-
-// getAbsolutePath 处理路径拼接
-func getAbsolutePath(mountNode mountNode, relativePath string) (abs string, rlPath string, err error) {
-	rlPath = relativePath
-	if "/" != mountNode.mtPath {
-		rlPath = relativePath[len(mountNode.mtPath):]
-		if rlPath == "" {
-			rlPath = "/"
-		}
-	}
-	// /Mount/.sys/.cache=>/.sys/.cache
-	if rlPath == sysDir ||
-		rlPath == "/"+sysDir ||
-		0 == strings.Index(rlPath, "/"+sysDir+"/") {
-		return abs, rlPath, errors.New("Does not allow access: " + rlPath)
-	}
-	abs = filepath.Clean(mountNode.mtAddr + rlPath)
-	//fmt.Println( "getAbsolutePath: ", rlPath, abs )
-	return
-}
-
-// getRelativePath 获取相对路径
-func getRelativePath(mti mountNode, absolute string) string {
-	// fmt.Println("getRelativePath: ", mti.mtAddr, absolute)
-	absolute = filepath.Clean(absolute)
-	if strings.HasPrefix(absolute, mti.mtAddr) {
-		return filepath.Clean(mti.mtPath + "/" + absolute[len(mti.mtAddr):])
-	}
-	return absolute
-}
-
-// getAbsoluteTempPath 获取该分区下的缓存目录
-func getAbsoluteTempPath(mountNode mountNode) string {
-	return filepath.Clean(mountNode.mtAddr + "/" + tempDir + "/" + strtool.GetUUID())
-}
-
-// getAbsoluteDeletingPath 获取一个放置删除文件的目录
-func getAbsoluteDeletingPath(mountNode mountNode) string {
-	return filepath.Clean(mountNode.mtAddr + "/" + deletingDir + "/" + strconv.FormatInt(time.Now().UnixNano(), 10))
 }

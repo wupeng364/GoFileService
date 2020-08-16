@@ -226,7 +226,7 @@
 			try{
 				return JSON.parse(localStorage.getItem(apitools._Const.ack));
 			}catch(err){
-				return null;
+				return {};
 			}
 		},
 		/**

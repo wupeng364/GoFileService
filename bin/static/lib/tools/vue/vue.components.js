@@ -723,21 +723,24 @@
 				filename:""
 			}
 		},
-		template:"<div style='width:100%;'>"+
+		template:"<div style='width:100%;' @click='onBoxClick'>"+
 					"<div style='overflow: hidden;text-overflow:ellipsis;white-space:nowrap;'>"+
 						"<img :src=\"icon\" style='vertical-align:middle;margin-right:10px;width:32px;height:32px'>"+
-						"<i-input v-if=\"isEditor\" v-model='filename' style='width: calc(100% - 45px);' @on-enter=\"doSave\"></i-input>"+
-						"<span v-else style='cursor:pointer' @click=\"doClick\" :title='filename'>{{filename}}</span>"+
+						"<i-input v-if=\"isEditor\" v-model='filename' style='width: calc(100% - 45px);' @on-blur='doSave' @on-enter='doSave'></i-input>"+
+						"<span v-else style='cursor:pointer' @click=\"onNameClick\" :title='filename'>{{filename}}</span>"+
 					"</div>"+
 				"</div>",		
-		methods:{		
-			doClick:function(){
-				this.$emit("click",this.node);
+		methods:{	
+			onBoxClick: function(e){
+				if( e.srcElement.tagName.toUpperCase() == 'INPUT'){
+					e.stopPropagation();
+				}
+			},	
+			onNameClick: function(e){
+				e.stopPropagation();
+				this.$emit("click",this.node, e);
 			},		
 			doSave:function(){	
-				if( !this.filename ){
-					return;
-				}			
 				if( this.isEditor === true ){ 
 					this.isEditor = false;						
 					this.$emit("doRename", this.node.Path, this.filename);	
@@ -832,7 +835,6 @@
 				let _ = this;
 				$utils.addEvent(this.$refs.upload_selector_file, "change", function( ev_data ){
 					if( ev_data.target.files ){
-						_.uploadend = false;
 						for(let i = 0; i < ev_data.target.files.length; i++){
 							let fs = ev_data.target.files[i];
 							fs._upload = {
@@ -855,8 +857,10 @@
 					if( this.uploading >= this.maxuploading){
 						return;
 					}
-					if(this.uploadend || this.dindex >= this.files.length){
+					if(this.dindex >= this.files.length){
 						this.uploadend = true; return;
+					}else if(this.uploadend){
+						this.uploadend = false;
 					}
 					this.uploading ++;
 					let file = this.files[this.dindex++];
@@ -931,7 +935,6 @@
 					if(!obj){ return; }
 					obj.ondrop = function( evn ){
 						evn.preventDefault( );
-						_.uploadend = false;
 						let fileList = evn.dataTransfer.files;
 						for(let i = 0; i < fileList.length; i++){
 							let fs = fileList[i];

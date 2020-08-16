@@ -15,8 +15,12 @@ import (
 	"errors"
 	"fmt"
 	"gutils/fstool"
+	"gutils/strtool"
 	"io"
+	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // localDriver 本地文件挂载操作驱动
@@ -27,25 +31,25 @@ type localDriver struct {
 
 // IsExist 文件是否存在
 func (locl localDriver) IsExist(relativePath string) (bool, error) {
-	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
+	absPath, _, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	return fstool.IsExist(absPath), locl.wrapError(err)
 }
 
 // IsDir IsDir
 func (locl localDriver) IsDir(relativePath string) (bool, error) {
-	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
+	absPath, _, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	return fstool.IsDir(absPath), locl.wrapError(err)
 }
 
 // IsFile IsFile
 func (locl localDriver) IsFile(relativePath string) (bool, error) {
-	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
+	absPath, _, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	return fstool.IsFile(absPath), locl.wrapError(err)
 }
 
 // GetDirList 获取路径列表, 返回相对路径
 func (locl localDriver) GetDirList(relativePath string) ([]string, error) {
-	absPath, mRelativePath, err := getAbsolutePath(locl.mountNode, relativePath)
+	absPath, mRelativePath, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	if err != nil {
 		return make([]string, 0), err
 	}
@@ -72,7 +76,7 @@ func (locl localDriver) GetDirList(relativePath string) ([]string, error) {
 
 // GetFileSize GetFileSize
 func (locl localDriver) GetFileSize(relativePath string) (int64, error) {
-	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
+	absPath, _, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	if nil != err {
 		return -1, err
 	}
@@ -82,7 +86,7 @@ func (locl localDriver) GetFileSize(relativePath string) (int64, error) {
 
 // GetModifyTime GetModifyTime
 func (locl localDriver) GetModifyTime(relativePath string) (int64, error) {
-	absPath, _, err := getAbsolutePath(locl.mountNode, relativePath)
+	absPath, _, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	if nil != err {
 		return -1, err
 	}
@@ -98,7 +102,7 @@ func (locl localDriver) DoMove(src string, dst string, replace, ignore bool, cal
 	if locl.mountNode.mtPath == src {
 		return errors.New("Does not allow access: " + src)
 	}
-	absSrc, _, err := getAbsolutePath(locl.mountNode, src)
+	absSrc, _, err := locl.getAbsolutePath(locl.mountNode, src)
 	if nil != err {
 		return err
 	}
@@ -107,7 +111,7 @@ func (locl localDriver) DoMove(src string, dst string, replace, ignore bool, cal
 	}
 	// 目标位置驱动接口
 	dstMountItem := locl.mtm.getMountItem(dst)
-	absDst, _, err := getAbsolutePath(dstMountItem, dst)
+	absDst, _, err := locl.getAbsolutePath(dstMountItem, dst)
 	if nil != err {
 		return err
 	}
@@ -115,14 +119,14 @@ func (locl localDriver) DoMove(src string, dst string, replace, ignore bool, cal
 	case localTypeKey:
 		{ // 本地存储
 			return fstool.MoveFiles(absSrc, absDst, replace, ignore, func(srcPath, dstPath string, err error) error {
-				rSrc := getRelativePath(locl.mountNode, srcPath)
-				rDst := getRelativePath(dstMountItem, dstPath)
+				rSrc := locl.getRelativePath(locl.mountNode, srcPath)
+				rDst := locl.getRelativePath(dstMountItem, dstPath)
 				if nil != err {
 					// 出现错误
 					return callback(rSrc, rDst, &MoveError{
 						SrcIsExist:  fstool.IsExist(srcPath),
 						DstIsExist:  fstool.IsExist(dstPath),
-						ErrorString: clearMountAddr(locl.mountNode, dstMountItem, err),
+						ErrorString: locl.clearMountAddr(locl.mountNode, dstMountItem, err),
 					})
 				}
 				return callback(rSrc, rDst, nil)
@@ -144,7 +148,7 @@ func (locl localDriver) DoRename(relativePath string, newName string) error {
 	if locl.mountNode.mtPath == relativePath {
 		return errors.New("Does not allow access: " + relativePath)
 	}
-	absSrc, _, err := getAbsolutePath(locl.mountNode, relativePath)
+	absSrc, _, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	if nil != err {
 		return err
 	}
@@ -159,7 +163,7 @@ func (locl localDriver) DoNewFolder(relativePath string) error {
 	if locl.mountNode.mtPath == relativePath {
 		return errors.New("Does not allow access: " + relativePath)
 	}
-	absSrc, _, err := getAbsolutePath(locl.mountNode, relativePath)
+	absSrc, _, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	if nil != err {
 		return err
 	}
@@ -171,11 +175,11 @@ func (locl localDriver) DoDelete(relativePath string) error {
 	if locl.mountNode.mtPath == relativePath {
 		return errors.New("Does not allow access: " + relativePath)
 	}
-	absSrc, _, err := getAbsolutePath(locl.mountNode, relativePath)
+	absSrc, _, err := locl.getAbsolutePath(locl.mountNode, relativePath)
 	if nil != err {
 		return err
 	}
-	deletingPath := getAbsoluteDeletingPath(locl.mountNode)
+	deletingPath := locl.getAbsoluteDeletingPath(locl.mountNode)
 	// 移动到删除零时目录, 如果存在则覆盖
 	// 通过这种方式可以减少函数等待时间, 但是如果线程删除失败则可能导致文件无法删除
 	// 所以再启动或者周期性的检擦删除零时目录, 进行清空
@@ -193,12 +197,12 @@ func (locl localDriver) DoDelete(relativePath string) error {
 func (locl localDriver) DoClearDeletings() {
 	for i := 0; i < len(locl.mtm.mtnds); i++ {
 		if locl.mtm.mtnds[i].mtType == localTypeKey {
-			dirs, _ := fstool.GetDirList(locl.mtm.mtnds[i].mtAddr + "/" + deletingDir)
+			dirs, _ := fstool.GetDirList(filepath.Clean(locl.mtm.mtnds[i].mtAddr + "/" + deletingDir))
 			if nil == dirs {
 				continue
 			}
 			for j := 0; j < len(dirs); j++ {
-				err := fstool.RemoveAll(locl.mtm.mtnds[i].mtAddr + "/" + deletingDir + "/" + dirs[j])
+				err := fstool.RemoveAll(filepath.Clean(locl.mtm.mtnds[i].mtAddr + "/" + deletingDir + "/" + dirs[j]))
 				if nil != err {
 					fmt.Println("DoClearDeletings", err)
 				}
@@ -209,13 +213,13 @@ func (locl localDriver) DoClearDeletings() {
 
 // DoCopy 拷贝文件
 func (locl localDriver) DoCopy(src, dst string, replace, ignore bool, callback CopyCallback) error {
-	absSrc, _, err := getAbsolutePath(locl.mountNode, src)
+	absSrc, _, err := locl.getAbsolutePath(locl.mountNode, src)
 	if nil != err {
 		return err
 	}
 	// 目标位置驱动接口
 	dstMountItem := locl.mtm.getMountItem(dst)
-	absDst, _, err := getAbsolutePath(dstMountItem, dst)
+	absDst, _, err := locl.getAbsolutePath(dstMountItem, dst)
 	if nil != err {
 		return err
 	}
@@ -223,27 +227,27 @@ func (locl localDriver) DoCopy(src, dst string, replace, ignore bool, callback C
 	case localTypeKey:
 		{ // 本地存储
 			if fstool.IsFile(absSrc) {
-				rSrc := getRelativePath(locl.mountNode, absSrc)
-				rDst := getRelativePath(dstMountItem, absDst)
+				rSrc := locl.getRelativePath(locl.mountNode, absSrc)
+				rDst := locl.getRelativePath(dstMountItem, absDst)
 				err = fstool.CopyFile(absSrc, absDst, replace, ignore)
 				if nil != err {
 					return callback(rSrc, rDst, &CopyError{
 						SrcIsExist:  fstool.IsExist(absSrc),
 						DstIsExist:  fstool.IsExist(absDst),
-						ErrorString: clearMountAddr(locl.mountNode, dstMountItem, err),
+						ErrorString: locl.clearMountAddr(locl.mountNode, dstMountItem, err),
 					})
 				}
 				return callback(rSrc, rDst, nil)
 			}
 			return fstool.CopyFiles(absSrc, absDst, replace, ignore, func(srcPath, dstPath string, err error) error {
-				rSrc := getRelativePath(locl.mountNode, srcPath)
-				rDst := getRelativePath(dstMountItem, dstPath)
+				rSrc := locl.getRelativePath(locl.mountNode, srcPath)
+				rDst := locl.getRelativePath(dstMountItem, dstPath)
 				if nil != err {
 					// 出现错误
 					return callback(rSrc, rDst, &CopyError{
 						SrcIsExist:  fstool.IsExist(srcPath),
 						DstIsExist:  fstool.IsExist(dstPath),
-						ErrorString: clearMountAddr(locl.mountNode, dstMountItem, err),
+						ErrorString: locl.clearMountAddr(locl.mountNode, dstMountItem, err),
 					})
 				}
 				return callback(rSrc, rDst, nil)
@@ -265,7 +269,7 @@ func (locl localDriver) DoCreat() (bool, error) {
 
 // DoRead 读取文件, 需要手动关闭流
 func (locl localDriver) DoRead(relativePath string, offset int64) (Reader, error) {
-	absDst, _, gpErr := getAbsolutePath(locl.mountNode, relativePath)
+	absDst, _, gpErr := locl.getAbsolutePath(locl.mountNode, relativePath)
 	if nil != gpErr {
 		return nil, gpErr
 	}
@@ -285,11 +289,11 @@ func (locl localDriver) DoWrite(relativePath string, ioReader io.Reader) error {
 	if ioReader == nil {
 		return errors.New("IO Reader is nil")
 	}
-	absDst, _, gpErr := getAbsolutePath(locl.mountNode, relativePath)
+	absDst, _, gpErr := locl.getAbsolutePath(locl.mountNode, relativePath)
 	if nil != gpErr {
 		return gpErr
 	}
-	tempPath := getAbsoluteTempPath(locl.mountNode)
+	tempPath := locl.getAbsoluteTempPath(locl.mountNode)
 	fs, wErr := fstool.GetWriter(tempPath)
 	if wErr != nil {
 		return locl.wrapError(wErr)
@@ -315,6 +319,50 @@ func (locl localDriver) DoWrite(relativePath string, ioReader io.Reader) error {
 	return locl.wrapError(cpErr)
 }
 
+// getAbsolutePath 处理路径拼接
+func (locl localDriver) getAbsolutePath(mountNode mountNode, relativePath string) (abs string, rlPath string, err error) {
+	rlPath = relativePath
+	if "/" != mountNode.mtPath {
+		rlPath = relativePath[len(mountNode.mtPath):]
+		if rlPath == "" {
+			rlPath = "/"
+		}
+	}
+	// /Mount/.sys/.cache=>/.sys/.cache
+	if rlPath == sysDir ||
+		rlPath == "/"+sysDir ||
+		0 == strings.Index(rlPath, "/"+sysDir+"/") {
+		return abs, rlPath, errors.New("Does not allow access: " + rlPath)
+	}
+	abs = filepath.Clean(mountNode.mtAddr + rlPath)
+	//fmt.Println( "getAbsolutePath: ", rlPath, abs )
+	return
+}
+
+// getRelativePath 获取相对路径
+func (locl localDriver) getRelativePath(mti mountNode, absolute string) string {
+	// fmt.Println("locl.getRelativePath: ", mti.mtAddr, absolute)
+	absolute = filepath.Clean(absolute)
+	if filepath.IsAbs(absolute) {
+		if strings.HasPrefix(absolute, mti.mtAddr) {
+			return strtool.Parse2UnixPath(mti.mtPath + "/" + absolute[len(mti.mtAddr):])
+		} else if strings.HasPrefix(mti.mtAddr, absolute) {
+			return mti.mtPath
+		}
+	}
+	return absolute
+}
+
+// getAbsoluteTempPath 获取该分区下的缓存目录
+func (locl localDriver) getAbsoluteTempPath(mountNode mountNode) string {
+	return filepath.Clean(mountNode.mtAddr + "/" + tempDir + "/" + strtool.GetUUID())
+}
+
+// getAbsoluteDeletingPath 获取一个放置删除文件的目录
+func (locl localDriver) getAbsoluteDeletingPath(mountNode mountNode) string {
+	return filepath.Clean(mountNode.mtAddr + "/" + deletingDir + "/" + strconv.FormatInt(time.Now().UnixNano(), 10))
+}
+
 // wrapLocalError 重新包装本地驱动错误信息, 避免真实路径暴露
 func (locl localDriver) wrapError(err error) error {
 	if nil != err {
@@ -324,41 +372,39 @@ func (locl localDriver) wrapError(err error) error {
 			if locl.mountNode.mtPath == "/" {
 				rStr = ""
 			}
-			//errStr = strings.Replace(errStr, "\\", "/", -1)
-			errStr = strings.Replace(errStr, locl.mountNode.mtAddr, rStr, -1)
-			return errors.New(strings.Replace(errStr, "\\", "/", -1))
+			errStr = strings.Replace(errStr, "\\", "/", -1)
+			errStr = strings.Replace(errStr, strtool.Parse2UnixPath(locl.mountNode.mtAddr), rStr, -1)
+			return errors.New(errStr)
 		}
 	}
 	return err
 }
 
 // clearMountAddr 去除挂载目录的位置信息
-func clearMountAddr(srcMount, destMount mountNode, err error) string {
+func (locl localDriver) clearMountAddr(srcMount, destMount mountNode, err error) string {
 	if nil != err {
-		errorStr := err.Error()
-		//errorStr := strings.Replace(err.Error(), "\\", "/", -1)
-		has := false
-		if strings.Index(errorStr, srcMount.mtAddr) > -1 {
-			// /root/datas/a/b -> /a/b/a/b
-			rStr := srcMount.mtPath
-			if srcMount.mtPath == "/" {
-				rStr = ""
+		errStr := err.Error()
+		if len(errStr) > 0 {
+			errStr = strings.Replace(errStr, "\\", "/", -1)
+			srcMtAddr := strtool.Parse2UnixPath(srcMount.mtAddr)
+			destMtAddr := strtool.Parse2UnixPath(destMount.mtAddr)
+			if strings.Index(errStr, srcMtAddr) > -1 {
+				// /root/datas/a/b -> /a/b/a/b
+				rStr := srcMount.mtPath
+				if srcMount.mtPath == "/" {
+					rStr = ""
+				}
+				errStr = strings.Replace(errStr, srcMtAddr, rStr, -1)
 			}
-			errorStr = strings.Replace(errorStr, srcMount.mtAddr, rStr, -1)
-			has = true
-		}
-		if strings.Index(errorStr, destMount.mtAddr) > -1 {
-			rStr := destMount.mtPath
-			if destMount.mtPath == "/" {
-				rStr = ""
+			if srcMtAddr != destMtAddr && strings.Index(errStr, destMtAddr) > -1 {
+				rStr := destMount.mtPath
+				if destMount.mtPath == "/" {
+					rStr = ""
+				}
+				errStr = strings.Replace(errStr, destMtAddr, rStr, -1)
 			}
-			errorStr = strings.Replace(errorStr, destMount.mtAddr, rStr, -1)
-			has = true
+			return errStr
 		}
-		if has {
-			errorStr = strings.Replace(errorStr, "\\", "/", -1)
-		}
-		return errorStr
 	}
 	return ""
 }

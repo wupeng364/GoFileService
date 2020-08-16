@@ -63,6 +63,7 @@ func (api *FPmsAPI) RoutList() httpserver.StructRegistrar {
 		BasePath:  baseurl,
 		HandlerFunc: []hstool.HandlersFunc{
 			api.ListFPermissions,
+			api.GetUserPermissionSum,
 			api.ListUserFPermissions,
 			api.AddFPermission,
 			api.DelFPermission,
@@ -100,6 +101,34 @@ func (api *FPmsAPI) ListFPermissions(w http.ResponseWriter, r *http.Request) {
 		} else {
 			httpserver.SendError(w, err)
 		}
+	} else {
+		httpserver.SendError(w, err)
+	}
+}
+
+// GetUserPermissionSum 根据用户ID查询权限值
+func (api *FPmsAPI) GetUserPermissionSum(w http.ResponseWriter, r *http.Request) {
+	userID := r.FormValue("userid")
+	var paths []string
+	if len(userID) == 0 {
+		httpserver.SendError(w, filepermission.ErrorUserIDIsNil)
+		return
+	}
+	err := json.Unmarshal([]byte(r.FormValue("paths")), &paths)
+	if nil != err || len(paths) == 0 {
+		httpserver.SendError(w, filepermission.ErrorPermissionPathIsNil)
+		return
+	}
+	if !api.checkPermission(w, r) {
+		return
+	}
+	permissions := make(map[string]int64, len(paths))
+	for i := 0; i < len(paths); i++ {
+		permissions[paths[i]] = api.fpmsr.GetUserPermissionSum(userID, paths[i])
+	}
+
+	if tb, err := json.Marshal(permissions); nil == err {
+		httpserver.SendSuccess(w, string(tb))
 	} else {
 		httpserver.SendError(w, err)
 	}
