@@ -337,9 +337,9 @@
         },
         // 包裹权限信息 
         doWarpPermission: function( datas ){
-          if(!datas || datas.length == 0){
-            this.loading = false; return;
-          }
+          // if(!datas || datas.length == 0){
+          //   this.loading = false; return;
+          // }
           this.permissionsMap = {};
           let paths = [this.fsAddress.loadPath];
           datas.forEach(function(row){ paths.push(row.Path); });
