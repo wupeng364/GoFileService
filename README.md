@@ -20,4 +20,4 @@ gofs支持简单的路径挂载, 文件基本操作(CRUD). 通过集成aplayer�
 * 用户管理(CRUD)
 ![用户管理](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/user.png "用户管理")
 * 文件权限(CRUD)
-![文件权限](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/filepermission.png"文件权限管理")
+![文件权限](https://github.com/wupeng364/GoFileService/blob/master/readme/imgs/filepermission.png "文件权限管理")
