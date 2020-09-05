@@ -794,11 +794,11 @@
 		props:["show-drawer", "parent", "drag-ref"],
 		data:function(){
 			return{
-				maxuploading: 5, // 最大正在上传的个数
-				uploading: 0,    // 正在上传的个数
-				uploadend: true, // 上传结束
-				dindex: 0,       // 当前数据下标
-				files: [],       // 文件
+				maxuploading: 5,    // 最大正在上传的个数
+				countuploading: 0,  // 正在上传的个数
+				dindex: 0,          // 当前数据下标
+				files: [],          // 文件
+				queueend: true,     // 队列可用为空
 			}
 		},
 		template:"<Drawer title=\"上传文件\" width=\"450px\" v-model=\"showDrawer\" @on-close=\"$emit('on-close')\">" + 
@@ -832,7 +832,7 @@
 		methods:{		
 			// 上传-触发选择文件
 			doSelectFiels: function( ev ){
-				let _ = this;
+				let _ = this; let emited = false;
 				$utils.addEvent(this.$refs.upload_selector_file, "change", function( ev_data ){
 					if( ev_data.target.files ){
 						for(let i = 0; i < ev_data.target.files.length; i++){
@@ -843,6 +843,7 @@
 								updater: false,
 								ps: 0,
 							};
+							if(!emited){ emited = true; _.$emit('on-start'); }
 							_.files.push( fs );
 							_.doStartUpload( );
 						}
@@ -854,18 +855,18 @@
 			// 上传-触发上传动作
 			doStartUpload: function( ){
 				if( this.files && this.files.length > 0 ){
-					if( this.uploading >= this.maxuploading){
+					if( this.countuploading >= this.maxuploading){
 						return;
 					}
 					if(this.dindex >= this.files.length){
-						this.uploadend = true; return;
-					}else if(this.uploadend){
-						this.uploadend = false;
+						this.queueend = true; return;
+					}else if(this.queueend){
+						this.queueend = false;
 					}
-					this.uploading ++;
+					this.countuploading ++;
 					let file = this.files[this.dindex++];
 					if( file._upload.removed ){
-						this.uploading --;
+						this.countuploading --;
 						this.$nextTick(this.doStartUpload);
 						return;
 					}
@@ -889,7 +890,7 @@
 						},
 						loadstart: function( e ){ },
 						loadend: function( e ){
-							_.uploading--;
+							_.countuploading--;
 							file._upload.ended = true;
 							_.$nextTick(function( ){
 								_.doStartUpload( );
@@ -935,6 +936,7 @@
 					if(!obj){ return; }
 					obj.ondrop = function( evn ){
 						evn.preventDefault( );
+						let emited = false;
 						let fileList = evn.dataTransfer.files;
 						for(let i = 0; i < fileList.length; i++){
 							let fs = fileList[i];
@@ -947,6 +949,7 @@
 								updater: false,
 								ps: 0,
 							};
+							if(!emited){ emited = true; _.$emit('on-start'); }
 							_.files.push( fs );
 							_.doStartUpload( );
 						}
@@ -959,11 +962,9 @@
 			this.doListenDrag(this.dragRef);
 		},
 		watch:{
-			uploadend: function(n, o){
-				if(n){
+			countuploading: function(n, o){
+				if(n <= 0 && this.queueend){
 					this.$emit('on-end');
-				}else{
-					this.$emit('on-start');
 				}
 			}
 		}
