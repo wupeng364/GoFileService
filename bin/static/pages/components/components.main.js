@@ -32,10 +32,11 @@
 					<i-button type="text" :icon='fsOperationButtons.delete.icon' v-show='fsOperationButtons.delete.show' @click='fsOperationButtons.delete.handler'>{{fsOperationButtons.delete.name}}</i-button>
 				</div>
 			</div>
-			<div style="height: 30px;line-height: 30px;padding-left: 20px;">
-				<fs-address :rootname="fsAddress.rootname" :path="fsAddress.loadPath" @click="goToPath"></fs-address>
+			<div style="height: 40px;line-height: 40px;padding: 0px 5px 0px 20px;overflow: hidden;">
+				<fs-address :rootname="fsAddress.rootname" :path="fsAddress.loadPath" @click="goToPath" style='float:left;max-width: calc(100% - 250px);'></fs-address>
+				<i-Input v-model='searchText' placeholder="Enter file name" @on-enter='loadDatePage(1);' style="float:right;max-width: 240px;padding: 4px 0px;"></i-Input>
 			</div>
-			<i-table ref="fsSelection" v-minus-height="120" :loading="loading" :columns="fsColumns" :data="fsData" highlight-row="true" @on-row-click="onRowClick" @on-selection-change="onSelectionChange"></i-table>
+			<i-table ref="fsSelection" v-minus-height="130" :loading="loading" :columns="fsColumns" :data="fsData" highlight-row="true" @on-row-click="onRowClick" @on-selection-change="onSelectionChange"></i-table>
 			<Page show-total :total="fsData_Total" size="small" :current='fsData_CurrentPageIndex' :page-size="fsData_PageSize" style="line-height: 45px;background: #FFF;float: right;padding: 0px 45px;" @on-change="loadDatePage"></Page>
 			<!-- 上传文件 -->
 			<fs-upload :show-drawer='fsUpload.showDrawer' :parent='fsAddress.loadPath' drag-ref='fslist-body' @on-end="$Message.info('上传完毕');doRefresh();" @on-start="$Message.info('开始上传')" @on-close='fsUpload.showDrawer=false;'></fs-upload>
@@ -51,6 +52,7 @@
 		data: function () {
 			let _ = this;
 			return {
+				searchText: '',
 				fsCopyFile: {
 					showDailog: false,
 					srcPaths: [],
@@ -177,11 +179,22 @@
 				});
 			},
 			loadDatePage: function (index) {
-				this.fsData_Total = this.fsData_All.length;
+				let dataAll = [];
+				if (this.searchText) {
+					let stemp = this.searchText.toLowerCase();
+					for (let i=0; i < this.fsData_All.length; i++ ) {
+						if ( this.fsData_All[i].Path.getName().toLowerCase().indexOf( stemp ) > -1 ){
+							dataAll.push( this.fsData_All[i] );
+						}
+					}
+				}else{
+					dataAll = this.fsData_All;
+				}
+				this.fsData_Total = dataAll.length;
 				this.fsData_CurrentPageIndex = index ? index : 1;
 				let _end = this.fsData_CurrentPageIndex * this.fsData_PageSize;
 				let _start = (this.fsData_CurrentPageIndex - 1) * this.fsData_PageSize;
-				let fsData = this.fsData_All.slice(_start > 0 ? _start : 0, _end);
+				let fsData = dataAll.slice(_start > 0 ? _start : 0, _end);
 				this.doWarpPermission(fsData);
 			},
 			// 包裹权限信息 
