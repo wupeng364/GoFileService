@@ -16,7 +16,7 @@
     overflow-y: auto;
   }
   #aplayer{
-    max-width: 900px;
+    max-width: 1000px;
     margin: auto;
     height: 100%;
     opacity: 0.8;
@@ -30,6 +30,7 @@
   }
 </style>
 <body>
+  <div id="bg" style="position: fixed; background-size: contain; background-position: center center; filter: blur(1px); width: 100%; height: 100%;"></div>
   <div id='aplayer'></div>
 </body>
 <script type="text/javascript">
@@ -56,9 +57,9 @@ function buildMusicList(token, datas){
         }
         res.list.push({
             name: node.Path.getName(false),
-            // artist: tags.artist,
+            artist: $utils.formatSize(node.FileSize),
             url: $apitools.getSignAPIURL($apitools.buildAPIURL('/preview/tokendatas'), {token: token, type:'stream', path: node.Path}),
-            // cover: curl
+            cover: '/img/preview/default_cover.png',
         });
       }
     }
@@ -73,7 +74,11 @@ function getCover( audio, cb ){
       let tags = datas.tags;
       
       audio.artist = tags.artist?tags.artist:'';
-      audio.cover = 'data:'+tags.picture.format+';base64,'+arrayBufferToBase64(tags.picture.data);
+      if(tags.picture){
+        audio.cover = 'data:'+tags.picture.format+';base64,'+arrayBufferToBase64(tags.picture.data);
+      }else{
+        audio.cover = '/img/preview/default_cover.png';
+      }
       if(cb){cb( );}
     },
     onError: function(err) {
@@ -113,21 +118,22 @@ window.onload = function(){
       });
       ap.on('listhide', function(e){
         document.getElementById('aplayer').style.height='66px';
-        console.log(document.getElementById('aplayer').style.height)
       });
       ap.on('listswitch', function(e){
         let mitem = mlist.list[e.index];
+        mitem.artist = undefined;
         parent.onLoaded({title:mitem.name, loadding:false});
-        if(mitem.cover){
-          document.body.style.backgroundImage  = "url('"+mitem.cover+"')";
-        }
         if( !mitem['_cover_'] ){
           getCover(mitem, function(){
             mitem['_cover_'] = true;
             ap.template.pic.style.backgroundImage = mitem.cover?"url('"+mitem.cover+"')":'';
             ap.template.author.innerHTML = mitem.artist?mitem.artist:'';
-            document.body.style.backgroundImage = "url('"+mitem.cover+"')";
+            document.getElementById('bg').style.backgroundImage = "url('"+mitem.cover+"')";
           });
+        }else{
+          if(mitem.cover){
+            document.getElementById('bg').style.backgroundImage  = "url('"+mitem.cover+"')";
+          }
         }
       })
       // 第一首歌

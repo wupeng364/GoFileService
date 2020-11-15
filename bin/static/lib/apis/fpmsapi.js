@@ -35,9 +35,6 @@
 				undefined == p || p < 0 ){
 					return false;
 			}
-			if( sum == 0 && sum >=0 ){
-				return true;
-			}
 			return 1<<p == (sum & (1<<p));
 		},
 		// 转换为描述文字

@@ -99,7 +99,7 @@ CopyAsync, MoveAsync:
 			在AsyncToken基础上加operation[ignore, ignoreall, replace, replaceall, discontinue]
 			返回结果:
 				无
-FileStreamToken:
+StreamToken:
 	描述: 传输令牌申请
 	签名校验: true
 	参数: 
@@ -108,11 +108,11 @@ FileStreamToken:
 	返回结果:
 		token string
 
-FileStream:
+Stream:
 	描述: 文件上传|下载, 
 	签名校验: true
 	参数: 
-		token string: FileStreamToken 申请的key
+		token string: StreamToken 申请的key
 	返回结果:
 		get:
 			download, 下载请求

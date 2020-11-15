@@ -81,9 +81,15 @@ func (html *HTMLPage) onInit() {
 // staticFilter 静态资源过滤器
 func (html *HTMLPage) staticFilter(w http.ResponseWriter, r *http.Request, next hstool.FilterNext) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	acrhs := r.Header["Access-Control-Request-Headers"]
+	if len(acrhs) > 0 {
+		w.Header().Set("Access-Control-Allow-Headers", strings.Join(acrhs, ","))
+	}
+	acrms := r.Header["Access-Control-Request-Method"]
+	if len(acrms) > 0 {
+		w.Header().Set("Access-Control-Allow-Methods", strings.Join(acrms, ","))
+	}
 	if "OPTIONS" == strings.ToUpper(r.Method) {
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "*")
 		w.WriteHeader(http.StatusOK)
 		return
 	}

@@ -243,7 +243,11 @@
 			};
 			return file.slice(file._cute._start, file._cute._end);
 		},
-		
+		// 是否支持ES6
+		supportES6: function( ){
+			try { new Function('var _ = () => {};'); } catch (e) { return false; }
+			return true;
+		},
 	});
 
 	// HTTP请求&文件上传

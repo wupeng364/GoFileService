@@ -1,0 +1,13 @@
+.ivu-tabs-bar {
+	margin-bottom: 8px;
+}
+.ivu-table-wrapper {
+    border: none;
+}
+.ivu-table:after{
+    content: none;
+}
+/* .file-list{} */
+.sys-setting .usermanagetab .ivu-tabs-content {
+	height: calc(100% - 33px - 16px);
+  }

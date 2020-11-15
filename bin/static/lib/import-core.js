@@ -13,9 +13,7 @@ if(typeof __import_core__=="undefined"){
 	// JS
 	document.write("<script type='text/javascript' src='/lib/common/extends.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/common/utils.js?v="+version+"'></script>");
-	document.write("<script type='text/javascript' src='/lib/3party_library/promise.auto.min.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/3party_library/vue/vue.min.js?v="+version+"'></script>");
-	document.write("<script type='text/javascript' src='/lib/3party_library/vue/vue-router.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/3party_library/iview/iview.min.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/3party_library/md5.js?v="+version+"'></script>");
 	document.write("<script type='text/javascript' src='/lib/tools/futil.js?v="+version+"'></script>");

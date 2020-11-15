@@ -96,7 +96,6 @@ func (task *CopyFile) Execute(r *http.Request) (string, error) {
 		// 这里面已经不属于一个会话, 使用令牌保存数据
 		copyDirErr := task.fm.DoCopy(qSrcPath, qDstPath, qReplace, qIgnore, func(s_src, s_dst string, copyErr *filemanage.CopyError) error {
 			// 获取令牌数据, 不存在则说明已经销毁
-			// 并保持刷新token的有效性, 除非终止操作否则都继续
 			tokenBody, tokenErr := task.getTokenObject(token)
 			if nil != tokenErr {
 				return tokenErr
@@ -263,7 +262,6 @@ func (task *CopyFile) Status(w http.ResponseWriter, r *http.Request) {
 // getTokenObject 获取文件传输Token对象
 func (task *CopyFile) getTokenObject(token string) (*CopyFileTokenObject, error) {
 	tokenBody := task.fm.GetToken(token)
-	// 并保持刷新token的有效性, 除非终止操作否则都继续
 	if nil == tokenBody {
 		return nil, ErrorOprationExpires
 	}

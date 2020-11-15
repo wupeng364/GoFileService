@@ -142,9 +142,15 @@ func (signature *Signature) GetUserID4Request(r *http.Request) string {
 func (signature *Signature) RestfulAPIFilter(w http.ResponseWriter, r *http.Request, next hstool.FilterNext) {
 	//fmt.Println("ApiFilter: ", r.RemoteAddr, r.URL.Path)
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	acrhs := r.Header["Access-Control-Request-Headers"]
+	if len(acrhs) > 0 {
+		w.Header().Set("Access-Control-Allow-Headers", strings.Join(acrhs, ","))
+	}
+	acrms := r.Header["Access-Control-Request-Method"]
+	if len(acrms) > 0 {
+		w.Header().Set("Access-Control-Allow-Methods", strings.Join(acrms, ","))
+	}
 	if "OPTIONS" == strings.ToUpper(r.Method) {
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "*")
 		w.WriteHeader(http.StatusOK)
 		return
 	}
