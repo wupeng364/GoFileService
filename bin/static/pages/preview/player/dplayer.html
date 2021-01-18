@@ -19,10 +19,21 @@ window.onload = function(){
     $preview.tokenDatas(token, 'list').then(function( datas ){
       // 
       datas = JSON.parse(datas);
-      let loaddingText = '正在加载: '+datas.Path.getName(false);
+      // 获取字幕文件
+      let fileName = datas.Path.getName(false);
+      let subtitleFilePath = '';
+      if(datas && datas.PeerDatas){
+        let supportSuffixe = ['vtt'/*, 'ass', 'srt', 'webvtt'*/];
+        for(let i=0; i<datas.PeerDatas.length; i++){
+          let tpath = datas.PeerDatas[i].Path;
+          if(tpath && supportSuffixe.indexOf( tpath.getSuffixed(false).toLowerCase() ) > -1 && tpath.indexOf(fileName) > -1){
+            subtitleFilePath = datas.PeerDatas[i].Path; break;
+          }
+        }
+      }
+      let loaddingText = '正在加载: '+ fileName;
       parent.onLoaded({title:loaddingText, loaddingText:loaddingText});
-      // 开始播放
-      (new DPlayer({
+      let dpOpts = {
         container: document.getElementById('dplayer'),
         video: {
           url: $apitools.getSignAPIURL($apitools.buildAPIURL('/preview/tokendatas'), {token: token, type:'stream'}),
@@ -30,8 +41,16 @@ window.onload = function(){
             // thumbnails: 'thumbnails.jpg',
         },
         contextmenu: []
-      })).play( );
-      loaddingText = datas.Path.getName(false);
+      };
+      // 字幕
+      if(subtitleFilePath){
+        dpOpts.subtitle = {
+          url: $apitools.getSignAPIURL($apitools.buildAPIURL('/preview/tokendatas'), {token: token, type:'stream', path: subtitleFilePath}),
+        };
+      }
+      // 开始播放
+      (new DPlayer(dpOpts)).play( );
+      loaddingText = fileName;
       parent.onLoaded({title:loaddingText, loadding:false});
     }).catch(function(err){
       parent.onLoaded({title:'加载失败',loaddingText:err.toString()});
