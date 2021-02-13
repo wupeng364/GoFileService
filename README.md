@@ -1,6 +1,6 @@
 # GOFS
 gofs支持简单的路径挂载, 文件基本操作(CRUD). 通过集成aplayer和dplayer实现了部分音频和视频的在线播放, 目前只开放MP3、MP4、flac格式使用播放器, 其他格式使用浏览器默认方式打开. windows安装完成后会自动生成一个名字为GoFileService的服务, Linux目前为手动安装使用.
-* DEMO: http://demo.sw0810.com:810
+* DEMO: [http://gofs.wup364.com](http://gofs.wup364.com "http://gofs.wup364.com")
 * 配置文件: {gofs}/conf/gofs.json
 * 默认端口: 8080
 * 默认用户: admin 密码空
